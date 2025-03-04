@@ -27,7 +27,7 @@ namespace Assets.Assets.Source
 
         private Vector2Int _gridPosition;
 
-        private int _durability = 2;
+        private int _durability = 1;
         private SpriteRenderer _renderer;
         
         private void Awake()

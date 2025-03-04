@@ -188,6 +188,11 @@ namespace Assets.Assets.Source
             return grid.CellToWorld(new(x, y, 0));
         }
 
+        public Vector2Int WorldToGridPosition(Vector3 worldPosition)
+        {
+            var grid = GetComponent<Grid>();
+            return new(grid.WorldToCell(worldPosition).x, grid.WorldToCell(worldPosition).y); 
+        }
         public void CollectGoldAtPosition(Vector2Int position)
         {
             GameDataManager.Instance.AmountOfGoldInInventory++;
@@ -217,6 +222,14 @@ namespace Assets.Assets.Source
             var wallComponent = wallGO.GetComponent<Wall>();
             wallComponent.DamageWall(1);
             return false;
+        }
+        public bool IsCellContainingGold(Vector2Int cellPosition)
+        {
+            return _interactableLayer[cellPosition.x, cellPosition.y] != null;
+        }
+        public bool IsCellContainingObstacle(Vector2Int cellPosition)
+        {
+            return _wallLayer[cellPosition.x, cellPosition.y] != null;
         }
     }
 }

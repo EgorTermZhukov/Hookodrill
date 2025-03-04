@@ -12,8 +12,6 @@ namespace Assets.Assets.Source
     {
         public static UIManager Instance { get; private set; }
 
-        
-
         [SerializeField] private TextMeshProUGUI _goldAmountText;
 
         private void Awake()
