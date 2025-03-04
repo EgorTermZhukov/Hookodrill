@@ -4,8 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using Unity.VisualScripting;
+using UnityEditor.SearchService;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Assets.Source
 {
@@ -185,6 +188,13 @@ namespace Assets.Assets.Source
             return grid.CellToWorld(new(x, y, 0));
         }
 
+        public void CollectGoldAtPosition(Vector2Int position)
+        {
+            GameDataManager.Instance.AmountOfGoldInInventory++;
+            var goldGO = _interactableLayer[position.x, position.y];
+            Destroy(goldGO);
+            _interactableLayer[position.x, position.y] = null;
+        }
         public bool AskForMove(GameObject goToMove, Vector2Int currentPosition, Vector2Int movementPosition)
         {
             if (movementPosition.x < 0 || movementPosition.y < 0)
@@ -192,8 +202,11 @@ namespace Assets.Assets.Source
             if(movementPosition.x >=  Width || movementPosition.y >= Height)
                 return false;
 
-
             var wallGO = _wallLayer[movementPosition.x, movementPosition.y];
+            var goldGO = _interactableLayer[movementPosition.x, movementPosition.y];
+
+            if (goldGO != null)
+                CollectGoldAtPosition(movementPosition);
 
             if(wallGO == null)
             {
