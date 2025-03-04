@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: eb60cf868c91a494b94bf3f07bb425c3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _miner: {instanceID: 0}
+  - _wall: {instanceID: 0}
+  - _floor: {instanceID: 0}
+  - _enemy: {instanceID: 0}
+  - _grid: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

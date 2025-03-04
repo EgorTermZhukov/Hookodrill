@@ -1,14 +1,18 @@
+using Assets.Assets.Source;
 using UnityEngine;
+using DG.Tweening;
 
 public class Main : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    [SerializeField] GridManager _gridManagerPrefab;
+    private GridManager _gridManager;
     void Start()
     {
+        DOTween.Init();
+        _gridManager = Instantiate(_gridManagerPrefab);
+        _gridManager.CreateLevel(10, 10);
         
     }
-
-    // Update is called once per frame
     void Update()
     {
         
