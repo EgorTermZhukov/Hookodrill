@@ -2,6 +2,7 @@
 using UnityEngine;
 using DG.Tweening;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Assets.Assets.Source
 {
@@ -15,22 +16,27 @@ namespace Assets.Assets.Source
         public bool IsAllowedToMove = true;
 
         [SerializeField] private GameObject _hook;
+        [SerializeField] private GameObject _squareSelectPrefab;
+
+        private GameObject _squareSelect;
 
         private void Awake()
         {
+            _squareSelect = Instantiate(_squareSelectPrefab);
         }
         public void Start()
         {
         }
         public void Update()
         {
+            if (IsHookBeingThrown)
+                return;
             var mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             var mouseGridPosition = GridManager.Instance.WorldToGridPosition(mouseWorldPosition);
 
             MousePosition = RestrictedMousePosition(mouseGridPosition);
 
-            if (IsHookBeingThrown)
-                return;
+            _squareSelect.transform.position = GridManager.Instance.GridToWorldPosition(MousePosition.x, MousePosition.y);
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -114,7 +120,10 @@ namespace Assets.Assets.Source
         public IEnumerator ThrowHook()
         {
             IsHookBeingThrown = true;
+
+            // Instantiate the hook at the starting position
             var hook = Instantiate(_hook, GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y), Quaternion.identity);
+
             // Determine the direction of the hook
             int directionX = Math.Sign(MousePosition.x - GridPosition.x);
             int directionY = Math.Sign(MousePosition.y - GridPosition.y);
@@ -122,7 +131,10 @@ namespace Assets.Assets.Source
             // Start from the GridPosition
             Vector2Int currentPosition = GridPosition;
 
-            // Iterate in the direction of the mouse
+            // List to store positions where gold was collected
+            List<Vector2Int> collectedGoldPositions = new List<Vector2Int>();
+
+            // Phase 1: Move the hook forward
             while (true)
             {
                 // Move to the next position
@@ -133,30 +145,48 @@ namespace Assets.Assets.Source
                 if (currentPosition.x < 0 || currentPosition.x >= GridManager.Instance.Width ||
                     currentPosition.y < 0 || currentPosition.y >= GridManager.Instance.Height)
                 {
-                    IsHookBeingThrown = false;
-                    Destroy(hook);
-                    yield break; // Stop if outside the grid
+                    break; // Stop if outside the grid
                 }
+
+                // Update the hook's position
+                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
+                yield return new WaitForSeconds(0.1f); // Delay for animation
 
                 // Check if the current cell contains gold
                 if (GridManager.Instance.IsCellContainingGold(currentPosition))
                 {
                     // Collect the gold
                     GridManager.Instance.CollectGoldAtPosition(currentPosition);
-                    yield return currentPosition; // Return the position where gold was collected
+                    collectedGoldPositions.Add(currentPosition); // Store the position where gold was collected
                 }
 
-                // Optional: Stop if an obstacle is encountered
-                if (GridManager.Instance.IsCellContainingObstacle(currentPosition))
+                // Stop if an obstacle is encountered or the mouse position is reached
+                if (GridManager.Instance.IsCellContainingObstacle(currentPosition) || currentPosition == MousePosition)
                 {
-                    IsHookBeingThrown = false;
-                    Destroy(hook);
-                    yield break;
+                    break;
                 }
-
-                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
-                yield return new WaitForSeconds(0.2f);
             }
+
+            // Phase 2: Move the hook back to the starting position
+            while (currentPosition != GridPosition)
+            {
+                // Move back to the previous position
+                currentPosition.x -= directionX;
+                currentPosition.y -= directionY;
+
+                // Update the hook's position
+                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
+                yield return new WaitForSeconds(0.04f); // Delay for animation
+            }
+
+            // Cleanup
+            IsHookBeingThrown = false;
+            Destroy(hook);
+            //// Optionally, do something with the collected gold positions
+            //foreach (var position in collectedGoldPositions)
+            //{
+            //    Debug.Log($"Collected gold at: {position}");
+            //}
         }
     }
 }
