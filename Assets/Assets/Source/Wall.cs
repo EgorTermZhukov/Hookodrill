@@ -22,6 +22,24 @@ namespace Assets.Assets.Source
     {
         public event EventHandler<WallEventArgs> OnWallDestroyed;
 
+        private bool _isObstacle;
+        public bool IsObstacle
+        {
+            get => _isObstacle;
+            set
+            {
+                if(value == true)
+                {
+                    _isObstacle = true;
+                    _renderer.color = Color.gray;
+                }
+                else
+                {
+                    _isObstacle = false;
+                }
+            }
+        }
+
         [SerializeField] private Sprite _normalWallSprite;
         [SerializeField] private Sprite _goldWallSprite;
 
@@ -66,6 +84,7 @@ namespace Assets.Assets.Source
             {
                 OnWallDestroyed?.Invoke(this, new WallEventArgs(_gridPosition, HasGold));
             }
+            SoundManager.Instance.WallHit();
         }
     }
 }

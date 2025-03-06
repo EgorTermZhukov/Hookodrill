@@ -16,13 +16,14 @@ namespace Assets.Assets.Source
         public bool IsAllowedToMove = true;
 
         [SerializeField] private GameObject _hook;
-        [SerializeField] private GameObject _squareSelectPrefab;
 
-        private GameObject _squareSelect;
+        private LineRenderer _lineRenderer;
+
+        private GameObject _currentHook = null;
 
         private void Awake()
         {
-            _squareSelect = Instantiate(_squareSelectPrefab);
+            _lineRenderer = GetComponent<LineRenderer>();   
             FacingDirection = Vector2Int.right;
         }
         public void Start()
@@ -30,6 +31,9 @@ namespace Assets.Assets.Source
         }
         public void Update()
         {
+            var worldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y);
+            var facingDirWorldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x + FacingDirection.x, GridPosition.y + FacingDirection.y);
+            _lineRenderer.SetPositions(new[] {new Vector3(worldPos.x, worldPos.y), new Vector3(facingDirWorldPos.x, facingDirWorldPos.y) });
             if (IsHookBeingThrown)
                 return;
             if (Input.GetKeyDown(KeyCode.X))
@@ -75,6 +79,7 @@ namespace Assets.Assets.Source
 
             var worldPosition = GridManager.Instance.GridToWorldPosition(movementPosition.x, movementPosition.y);
             transform.position = worldPosition;
+            SoundManager.Instance.Move();
         }
 
         private void OnDrawGizmos()
@@ -83,12 +88,20 @@ namespace Assets.Assets.Source
             Gizmos.DrawLine(transform.position, transform.position + new Vector3(FacingDirection.x, FacingDirection.y, 0));
         }
 
+        public void OnDestroy()
+        {
+            if(_currentHook != null)
+                Destroy(_currentHook);
+        }
         public IEnumerator ThrowHook()
         {
+            SoundManager.Instance.HookThrow();
+            if (!GameDataManager.Instance.UsePowerup())
+                yield break;
             IsHookBeingThrown = true;
 
             var hook = Instantiate(_hook, GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y), Quaternion.identity);
-
+            _currentHook  = hook;   
             int directionX = FacingDirection.x;
             int directionY = FacingDirection.y;
 
@@ -106,19 +119,23 @@ namespace Assets.Assets.Source
                     break;
                 }
 
-                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
-                yield return new WaitForSeconds(0.03f);
-
                 if (GridManager.Instance.IsCellContainingGold(currentPosition))
                 {
                     GridManager.Instance.CollectGoldAtPosition(currentPosition);
                     collectedGoldPositions.Add(currentPosition);
                 }
 
-                if (GridManager.Instance.IsCellContainingObstacle(currentPosition))
+                if(GridManager.Instance.IsCellContainingObstacle(currentPosition)) 
+                {
+                    break;
+                }
+
+                if (GridManager.Instance.IsCellContainingWall(currentPosition))
                 {
                     GridManager.Instance.DamageWallAtPosition(currentPosition);
                 }
+                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
+                yield return new WaitForSeconds(0.03f);
             }
 
             while (currentPosition != GridPosition)

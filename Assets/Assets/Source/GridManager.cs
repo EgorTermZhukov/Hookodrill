@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework.Constraints;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,6 +30,8 @@ namespace Assets.Assets.Source
     internal class GridManager : MonoBehaviour
     {
         public bool GridInitiated { get; private set; } = false;
+
+        public event Action<int> OnGameEnded;
         public int Width { get; private set; }
         public int Height { get; private set; }
 
@@ -37,6 +40,9 @@ namespace Assets.Assets.Source
         [SerializeField] private GameObject _floor;
         [SerializeField] private GameObject _enemy;
         [SerializeField] private GameObject _gold;
+
+        private int _goldOnTheLevel = 0;
+        private int _countdownTime; // The remaining time in seconds
 
         public static GridManager Instance { get; private set; }
 
@@ -64,6 +70,7 @@ namespace Assets.Assets.Source
         }
         public void CreateLevel(int width, int height)
         {
+            SoundManager.Instance.LevelComplete();
             Width = width;
             Height = height;
 
@@ -107,9 +114,17 @@ namespace Assets.Assets.Source
                         continue;
 
                     var hasGold = random.Next(2) == 0;
+                    var isAnObstacle = random.Next(4) == 0;
+
+                    if (hasGold == true)
+                        _goldOnTheLevel++;
+
+                    if (hasGold)
+                        isAnObstacle = false;
 
                     var wall = Instantiate(_wall, worldPosition, Quaternion.identity);
                     var wallComponent = wall.GetComponent<Wall>();
+                    wallComponent.IsObstacle = isAnObstacle;
 
                     wallComponent.AssignGoldAndAddAction(new(x, y), hasGold, CreateGoldOnWallDestroyed);
 
@@ -195,11 +210,46 @@ namespace Assets.Assets.Source
         }
         public void CollectGoldAtPosition(Vector2Int position)
         {
+            SoundManager.Instance.GoldCollect();
+            _goldOnTheLevel--;
             GameDataManager.Instance.AmountOfGoldInInventory++;
             var goldGO = _interactableLayer[position.x, position.y];
             Destroy(goldGO);
             _interactableLayer[position.x, position.y] = null;
+            if (_goldOnTheLevel <= 0)
+                GridManager.Instance.ReloadLevel();
         }
+
+        private void ReloadLevel()
+        {
+            DestroyMap();
+            CreateLevel(Width, Height);
+        }
+
+        private void DestroyMap()
+        {
+            foreach (var floor in _floorLayer)
+            {
+                if (floor != null)
+                    Destroy(floor);
+            }
+            foreach (var wall in _wallLayer)
+            {
+                if (wall != null)
+                    Destroy(wall);
+            }
+            foreach (var character in _characterLayer)
+            {
+                if (character != null)
+                    Destroy(character);
+            }
+            foreach (var interactable in _interactableLayer)
+            {
+                if (interactable != null)
+                    Destroy(interactable);
+            }
+        }
+
         public void DamageWallAtPosition(Vector2Int position)
         {
             var wallToDamage = _wallLayer[position.x, position.y].GetComponent<Wall>();
@@ -223,6 +273,8 @@ namespace Assets.Assets.Source
             }
             var wallComponent = wallGO.GetComponent<Wall>();
             wallComponent.DamageWall(1);
+            if (IsCellContainingGold(movementPosition))
+                CollectGoldAtPosition(movementPosition);
             return false;
         }
         public bool IsInBounds(Vector2Int position)
@@ -237,9 +289,47 @@ namespace Assets.Assets.Source
         {
             return _interactableLayer[cellPosition.x, cellPosition.y] != null;
         }
-        public bool IsCellContainingObstacle(Vector2Int cellPosition)
+        public bool IsCellContainingWall(Vector2Int cellPosition)
         {
             return _wallLayer[cellPosition.x, cellPosition.y] != null;
+        }
+        public bool IsCellContainingObstacle(Vector2Int cellPosition)
+        {
+            var go = _wallLayer[cellPosition.x, cellPosition.y];
+
+            if (go == null)
+                return false;
+
+            var obstacle = go.GetComponent<Wall>();
+            return obstacle.IsObstacle;
+        }
+        public void StartCountdown(int durationInSeconds)
+        {
+            _countdownTime = durationInSeconds;
+            StartCoroutine(Countdown());
+        }
+
+        // Coroutine to handle the countdown logic
+        private IEnumerator Countdown()
+        {
+            while (_countdownTime > 0)
+            {
+                UIManager.Instance.UpdateTimerDisplay(_countdownTime);
+                yield return new WaitForSeconds(1); // Wait for 1 second
+                _countdownTime--;
+            }
+
+            // When the countdown reaches 0
+            UIManager.Instance.UpdateTimerDisplay(0);
+            FinishGame();
+
+            Debug.Log("Countdown finished!");
+            // You can trigger any end-of-timer logic here
+        }
+        private void FinishGame()
+        {
+            DestroyMap();
+            OnGameEnded?.Invoke(GameDataManager.Instance.AmountOfGoldInInventory);
         }
     }
 }
