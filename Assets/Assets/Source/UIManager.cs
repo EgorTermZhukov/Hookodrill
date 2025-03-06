@@ -16,7 +16,12 @@ namespace Assets.Assets.Source
 
         private void Awake()
         {
-            Instance = this;
+            if(Instance == null)
+                Instance = this;
+            else
+            {
+                Destroy(this);
+            }
         }
         public void SetGoldText(int amountOfGold)
         {

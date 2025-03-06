@@ -29,7 +29,6 @@ namespace Assets.Assets.Source
     internal class GridManager : MonoBehaviour
     {
         public bool GridInitiated { get; private set; } = false;
-        public bool PlayerAllowedToMove { get; private set; } = false;
         public int Width { get; private set; }
         public int Height { get; private set; }
 
@@ -50,8 +49,12 @@ namespace Assets.Assets.Source
 
         private void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
                 Instance = this;
+            else
+            {
+                Destroy(this);
+            }
         }
         private void Start()
         {
@@ -75,7 +78,7 @@ namespace Assets.Assets.Source
         {
             var grid = gameObject.GetComponent<Grid>();
             _floorLayer = new GameObject[width, height];
-            for(int x = 0; x < width; x++) 
+            for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -87,14 +90,14 @@ namespace Assets.Assets.Source
         }
         private void CreateWalls(int width, int height, GameObject[,] previousLayer)
         {
-            if(previousLayer == null)
+            if (previousLayer == null)
                 throw new ArgumentNullException(nameof(previousLayer));
 
             var grid = gameObject.GetComponent<Grid>();
             _wallLayer = new GameObject[width, height];
 
             var random = new System.Random();
-            for(int x = 0; x < width; x++) 
+            for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -108,14 +111,13 @@ namespace Assets.Assets.Source
                     var wall = Instantiate(_wall, worldPosition, Quaternion.identity);
                     var wallComponent = wall.GetComponent<Wall>();
 
-                    wallComponent.AssignGoldAndAddAction(new(x, y), hasGold, OnWallDestroyed);
+                    wallComponent.AssignGoldAndAddAction(new(x, y), hasGold, CreateGoldOnWallDestroyed);
 
                     _wallLayer[x, y] = wall;
                 }
             }
         }
-
-        private void OnWallDestroyed(object sender, WallEventArgs e)
+        private void CreateGoldOnWallDestroyed(object sender, WallEventArgs e)
         {
             var wallGO = _wallLayer[e.GridPosition.x, e.GridPosition.y];
             Destroy(wallGO);
@@ -124,24 +126,22 @@ namespace Assets.Assets.Source
                 return;
             CreateGoldAtPosition(e.GridPosition);
         }
-
         private void CreateGoldAtPosition(Vector2Int gridPosition)
         {
             var worldPosition = GridToWorldPosition(gridPosition.x, gridPosition.y);
             var gold = Instantiate(_gold, worldPosition, Quaternion.identity);
             _interactableLayer[gridPosition.x, gridPosition.y] = gold;
         }
-
         private void CreateCharacters(int width, int height, GameObject[,] previousLayer)
         {
-            if(previousLayer == null)
+            if (previousLayer == null)
                 throw new ArgumentNullException(nameof(previousLayer));
-            
+
             var grid = gameObject.GetComponent<Grid>();
 
             _characterLayer = new GameObject[width, height];
 
-            for(int x = 0; x < width; x++) 
+            for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -161,7 +161,7 @@ namespace Assets.Assets.Source
         }
         private void CreateInteractables(int width, int height, GameObject[,] previousLayer)
         {
-            if(previousLayer == null)
+            if (previousLayer == null)
                 throw new ArgumentNullException(nameof(previousLayer));
 
             _interactableLayer = new GameObject[width, height];
@@ -172,7 +172,7 @@ namespace Assets.Assets.Source
                 throw new Exception("Game map wasn't initiated");
             if (x < 0 || y < 0)
                 throw new ArgumentOutOfRangeException();
-            if(x >= Width || y >= Height)
+            if (x >= Width || y >= Height)
                 throw new ArgumentOutOfRangeException();
 
             var tiles = new Dictionary<LayerType, GameObject>();
@@ -191,7 +191,7 @@ namespace Assets.Assets.Source
         public Vector2Int WorldToGridPosition(Vector3 worldPosition)
         {
             var grid = GetComponent<Grid>();
-            return new(grid.WorldToCell(worldPosition).x, grid.WorldToCell(worldPosition).y); 
+            return new(grid.WorldToCell(worldPosition).x, grid.WorldToCell(worldPosition).y);
         }
         public void CollectGoldAtPosition(Vector2Int position)
         {
@@ -200,20 +200,22 @@ namespace Assets.Assets.Source
             Destroy(goldGO);
             _interactableLayer[position.x, position.y] = null;
         }
+        public void DamageWallAtPosition(Vector2Int position)
+        {
+            var wallToDamage = _wallLayer[position.x, position.y].GetComponent<Wall>();
+            wallToDamage.DamageWall(1);
+        }
         public bool AskForMove(GameObject goToMove, Vector2Int currentPosition, Vector2Int movementPosition)
         {
-            if (movementPosition.x < 0 || movementPosition.y < 0)
-                return false;
-            if(movementPosition.x >=  Width || movementPosition.y >= Height)
+            if (!IsInBounds(movementPosition))
                 return false;
 
             var wallGO = _wallLayer[movementPosition.x, movementPosition.y];
-            var goldGO = _interactableLayer[movementPosition.x, movementPosition.y];
 
-            if (goldGO != null)
+            if (IsCellContainingGold(movementPosition))
                 CollectGoldAtPosition(movementPosition);
 
-            if(wallGO == null)
+            if (wallGO == null)
             {
                 _characterLayer[movementPosition.x, movementPosition.y] = goToMove;
                 _characterLayer[currentPosition.x, currentPosition.y] = null;
@@ -222,6 +224,14 @@ namespace Assets.Assets.Source
             var wallComponent = wallGO.GetComponent<Wall>();
             wallComponent.DamageWall(1);
             return false;
+        }
+        public bool IsInBounds(Vector2Int position)
+        {
+            if (position.x < 0 || position.y < 0)
+                return false;
+            if(position.x >=  Width || position.y >= Height)
+                return false;
+            return true;
         }
         public bool IsCellContainingGold(Vector2Int cellPosition)
         {
