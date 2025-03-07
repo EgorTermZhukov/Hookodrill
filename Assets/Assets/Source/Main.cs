@@ -12,7 +12,7 @@ public class Main : MonoBehaviour
     {
         DOTween.Init();
         _gridManager = Instantiate(_gridManagerPrefab);
-        _gridManager.CreateLevel(6, 6);
+        _gridManager.CreateLevel(5, 5);
         GridManager.Instance.OnGameEnded += GoToEndgameScreen;
         GridManager.Instance.StartCountdown(60);
     }

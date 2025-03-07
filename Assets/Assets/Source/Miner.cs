@@ -31,17 +31,20 @@ namespace Assets.Assets.Source
         }
         public void Update()
         {
+            FacingDirection = ChangeDirection(FacingDirection);
+
             var worldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y);
             var facingDirWorldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x + FacingDirection.x, GridPosition.y + FacingDirection.y);
             _lineRenderer.SetPositions(new[] {new Vector3(worldPos.x, worldPos.y), new Vector3(facingDirWorldPos.x, facingDirWorldPos.y) });
+            
             if (IsHookBeingThrown)
                 return;
+
             if (Input.GetKeyDown(KeyCode.X))
             {
                 StartCoroutine(ThrowHook());
             }
 
-            FacingDirection = ChangeDirection(FacingDirection);
             if(Input.GetKeyDown(KeyCode.Z))
                 TryMove();
         }
@@ -140,6 +143,10 @@ namespace Assets.Assets.Source
 
             while (currentPosition != GridPosition)
             {
+                if (currentPosition.x - directionX == GridPosition.x && currentPosition.y - directionY == GridPosition.y)
+                {
+                    break;
+                }
                 currentPosition.x -= directionX;
                 currentPosition.y -= directionY;
 
@@ -155,6 +162,7 @@ namespace Assets.Assets.Source
 
             IsHookBeingThrown = false;
             Destroy(hook);
+            yield break;
         }
     }
 }

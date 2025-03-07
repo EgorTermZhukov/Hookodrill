@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using Unity.VisualScripting;
-using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 namespace Assets.Assets.Source
 {
@@ -43,7 +43,7 @@ namespace Assets.Assets.Source
 
         private int _goldOnTheLevel = 0;
         private int _countdownTime; // The remaining time in seconds
-
+        private int _levelCount = 0;
         public static GridManager Instance { get; private set; }
 
         private Grid _grid;
@@ -70,6 +70,7 @@ namespace Assets.Assets.Source
         }
         public void CreateLevel(int width, int height)
         {
+            _levelCount++;
             SoundManager.Instance.LevelComplete();
             Width = width;
             Height = height;
@@ -79,6 +80,7 @@ namespace Assets.Assets.Source
             CreateCharacters(width, height, _wallLayer);
             CreateInteractables(width, height, _characterLayer);
             GridInitiated = true;
+            AdjustCamera();
             Debug.Log("Map generation complete");
         }
         private void CreateFloor(int width, int height)
@@ -210,6 +212,7 @@ namespace Assets.Assets.Source
         }
         public void CollectGoldAtPosition(Vector2Int position)
         {
+            UIManager.Instance.ShowPopup(GridToWorldPosition(position.x, position.y));
             SoundManager.Instance.GoldCollect();
             _goldOnTheLevel--;
             GameDataManager.Instance.AmountOfGoldInInventory++;
@@ -223,6 +226,12 @@ namespace Assets.Assets.Source
         private void ReloadLevel()
         {
             DestroyMap();
+            if(_levelCount % 5 == 0)
+            {
+                Width++;
+                Height++;
+            }
+            UIManager.Instance.UpdateLevelText(_levelCount % 5);
             CreateLevel(Width, Height);
         }
 
@@ -330,6 +339,52 @@ namespace Assets.Assets.Source
         {
             DestroyMap();
             OnGameEnded?.Invoke(GameDataManager.Instance.AmountOfGoldInInventory);
+        }
+        private void AdjustCamera()
+        {
+            Camera cam = Camera.main;
+            if (cam == null)
+            {
+                Debug.LogError("Main camera not found.");
+                return;
+            }
+
+            Grid grid = GetComponent<Grid>();
+            if (grid == null)
+            {
+                Debug.LogError("Grid component not found.");
+                return;
+            }
+
+            Vector3 cellSize = grid.cellSize;
+
+            // Calculate grid bounds in world space
+            Vector3 minPos = grid.CellToWorld(new Vector3Int(0, 0, 0));
+            Vector3 maxPos = grid.CellToWorld(new Vector3Int(Width - 1, Height - 1, 0)) + new Vector3(cellSize.x, cellSize.y, 0);
+
+            // Center the camera
+            Vector3 center = (minPos + maxPos) / 2f;
+
+            // Adjust the center to account for the off-center issue
+
+            // Use DoTween to smoothly move the camera to the center
+            cam.transform.DOMove(new Vector3(center.x, center.y, cam.transform.position.z), 1f).SetEase(Ease.OutQuad);
+
+            // Calculate required orthographic size to fit the grid
+            float gridWidth = maxPos.x - minPos.x;
+            float gridHeight = maxPos.y - minPos.y;
+            float aspectRatio = cam.aspect;
+            float targetSizeHeight = gridHeight / 2f;
+            float targetSizeWidth = (gridWidth / 2f) / aspectRatio;
+
+            float targetOrthoSize = Mathf.Max(targetSizeHeight, targetSizeWidth);
+
+            // Add padding for text and update camera
+            float padding = 2f; // Increase padding to fit text
+            float finalOrthoSize = targetOrthoSize + padding;
+
+            // Use DoTween to smoothly adjust the orthographic size
+            cam.DOOrthoSize(finalOrthoSize, 1f).SetEase(Ease.OutQuad);
         }
     }
 }
