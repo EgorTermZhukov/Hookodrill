@@ -17,6 +17,12 @@ namespace Assets.Assets.Source
 
         [SerializeField] private GameObject _hook;
 
+        private float lastZMoveTime;
+        [SerializeField] private float zMoveCooldown = 0.2f;
+
+        private float bufferedZPressTime = -1f;
+        [SerializeField] private float inputBufferWindow = 0.2f;
+
         private LineRenderer _lineRenderer;
 
         private GameObject _currentHook = null;
@@ -28,6 +34,7 @@ namespace Assets.Assets.Source
         }
         public void Start()
         {
+            lastZMoveTime = -zMoveCooldown;
         }
         public void Update()
         {
@@ -36,17 +43,33 @@ namespace Assets.Assets.Source
             var worldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y);
             var facingDirWorldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x + FacingDirection.x, GridPosition.y + FacingDirection.y);
             _lineRenderer.SetPositions(new[] {new Vector3(worldPos.x, worldPos.y), new Vector3(facingDirWorldPos.x, facingDirWorldPos.y) });
-            
+
+            if (Input.GetKeyDown(KeyCode.Z))
+            {
+                bufferedZPressTime = Time.time;
+            }
+
             if (IsHookBeingThrown)
                 return;
+
+            if (bufferedZPressTime > 0 && Time.time - bufferedZPressTime <= inputBufferWindow)
+            {
+                TryMove();
+                bufferedZPressTime = -1f; // Consume the buffered input
+                lastZMoveTime = Time.time; // Sync with cooldown system
+            }
+
+            // Existing cooldown-based movement
+            if (Input.GetKey(KeyCode.Z) && Time.time - lastZMoveTime >= zMoveCooldown)
+            {
+                TryMove();
+                lastZMoveTime = Time.time;
+            }
 
             if (Input.GetKeyDown(KeyCode.X))
             {
                 StartCoroutine(ThrowHook());
             }
-
-            if(Input.GetKeyDown(KeyCode.Z))
-                TryMove();
         }
         public Vector2Int ChangeDirection(Vector2Int currentDirection)
         {
@@ -143,6 +166,7 @@ namespace Assets.Assets.Source
 
             while (currentPosition != GridPosition)
             {
+
                 if (currentPosition.x - directionX == GridPosition.x && currentPosition.y - directionY == GridPosition.y)
                 {
                     break;
@@ -152,14 +176,19 @@ namespace Assets.Assets.Source
 
                 if (GridManager.Instance.IsCellContainingGold(currentPosition))
                 {
-                    GridManager.Instance.CollectGoldAtPosition(currentPosition);
                     collectedGoldPositions.Add(currentPosition);
+                    int timerUp = (int)Math.Floor((double)(collectedGoldPositions.Count / 3));
+                    if (timerUp > 0)
+                    {
+                        collectedGoldPositions.RemoveRange(collectedGoldPositions.Count - 1 - timerUp, collectedGoldPositions.Count - 1);
+                        GridManager.Instance.IncreaseTimer(timerUp * 2, GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y));
+                    }
+                    GridManager.Instance.CollectGoldAtPosition(currentPosition);
                 }
 
                 hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
                 yield return new WaitForSeconds(0.03f);
             }
-
             IsHookBeingThrown = false;
             Destroy(hook);
             yield break;

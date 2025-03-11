@@ -106,6 +106,8 @@ MonoBehaviour:
   IsHookBeingThrown: 0
   IsAllowedToMove: 1
   _hook: {fileID: 2679694631385660625, guid: 3feb8af89bd898e488966c8e08f7b280, type: 3}
+  zMoveCooldown: 0.18
+  inputBufferWindow: 0.1
 --- !u!120 &4105310032608980676
 LineRenderer:
   serializedVersion: 2

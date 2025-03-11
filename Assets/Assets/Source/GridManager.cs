@@ -81,7 +81,6 @@ namespace Assets.Assets.Source
             CreateInteractables(width, height, _characterLayer);
             GridInitiated = true;
             AdjustCamera();
-            Debug.Log("Map generation complete");
         }
         private void CreateFloor(int width, int height)
         {
@@ -183,22 +182,6 @@ namespace Assets.Assets.Source
 
             _interactableLayer = new GameObject[width, height];
         }
-        public Dictionary<LayerType, GameObject> GetTilesAtPosInAllLayers(int x, int y)
-        {
-            if (!GridInitiated)
-                throw new Exception("Game map wasn't initiated");
-            if (x < 0 || y < 0)
-                throw new ArgumentOutOfRangeException();
-            if (x >= Width || y >= Height)
-                throw new ArgumentOutOfRangeException();
-
-            var tiles = new Dictionary<LayerType, GameObject>();
-            tiles.Add(LayerType.Floor, _floorLayer[x, y]);
-            tiles.Add(LayerType.Wall, _wallLayer[x, y]);
-            tiles.Add(LayerType.Character, _characterLayer[x, y]);
-            tiles.Add(LayerType.Interactable, _interactableLayer[x, y]);
-            return tiles;
-        }
         public Vector2 GridToWorldPosition(int x, int y)
         {
             var grid = GetComponent<Grid>();
@@ -212,7 +195,7 @@ namespace Assets.Assets.Source
         }
         public void CollectGoldAtPosition(Vector2Int position)
         {
-            UIManager.Instance.ShowPopup(GridToWorldPosition(position.x, position.y));
+            //UIManager.Instance.ShowPopup(GridToWorldPosition(position.x, position.y), Color.yellow);
             SoundManager.Instance.GoldCollect();
             _goldOnTheLevel--;
             GameDataManager.Instance.AmountOfGoldInInventory++;
@@ -222,7 +205,6 @@ namespace Assets.Assets.Source
             if (_goldOnTheLevel <= 0)
                 GridManager.Instance.ReloadLevel();
         }
-
         private void ReloadLevel()
         {
             DestroyMap();
@@ -230,11 +212,12 @@ namespace Assets.Assets.Source
             {
                 Width++;
                 Height++;
+                var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
+                IncreaseTimer(5, popupPosition);
             }
             UIManager.Instance.UpdateLevelText(_levelCount % 5);
             CreateLevel(Width, Height);
         }
-
         private void DestroyMap()
         {
             foreach (var floor in _floorLayer)
@@ -271,20 +254,17 @@ namespace Assets.Assets.Source
 
             var wallGO = _wallLayer[movementPosition.x, movementPosition.y];
 
-            if (IsCellContainingGold(movementPosition))
-                CollectGoldAtPosition(movementPosition);
-
-            if (wallGO == null)
+            if (wallGO != null)
             {
-                _characterLayer[movementPosition.x, movementPosition.y] = goToMove;
-                _characterLayer[currentPosition.x, currentPosition.y] = null;
-                return true;
+                var wallComponent = wallGO.GetComponent<Wall>();
+                wallComponent.DamageWall(1);
+                if (IsCellContainingGold(movementPosition))
+                    CollectGoldAtPosition(movementPosition);
             }
-            var wallComponent = wallGO.GetComponent<Wall>();
-            wallComponent.DamageWall(1);
-            if (IsCellContainingGold(movementPosition))
-                CollectGoldAtPosition(movementPosition);
-            return false;
+
+            _characterLayer[movementPosition.x, movementPosition.y] = goToMove;
+            _characterLayer[currentPosition.x, currentPosition.y] = null;
+            return true;
         }
         public bool IsInBounds(Vector2Int position)
         {
@@ -331,9 +311,12 @@ namespace Assets.Assets.Source
             // When the countdown reaches 0
             UIManager.Instance.UpdateTimerDisplay(0);
             FinishGame();
-
-            Debug.Log("Countdown finished!");
-            // You can trigger any end-of-timer logic here
+        }
+        public void IncreaseTimer(int amount, Vector3 popupPlace)
+        {
+            SoundManager.Instance.TimerIncrease();
+            _countdownTime += amount;
+            UIManager.Instance.ShowPopup(popupPlace, Color.green, amount + "s");
         }
         private void FinishGame()
         {

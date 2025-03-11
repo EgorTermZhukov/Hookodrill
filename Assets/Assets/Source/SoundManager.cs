@@ -16,6 +16,7 @@ namespace Assets.Assets.Source
         [SerializeField] AudioSource _wallHit;
         [SerializeField] AudioSource _move;
         [SerializeField] AudioSource _goldCollect;
+        [SerializeField] AudioSource _timerIncreased;
         private void Awake()
         {
             
@@ -27,7 +28,7 @@ namespace Assets.Assets.Source
             }
         }
 
-        private void PlayPitched(AudioSource sound)
+        private void PlayPitched(AudioSource sound, float rangeMin = 1f, float rangeMax = 1.1f)
         {
             sound.pitch = UnityEngine.Random.Range(1f, 1.1f);
             sound.Play();
@@ -52,6 +53,10 @@ namespace Assets.Assets.Source
         public void GoldCollect() 
         {
             PlayPitched(_goldCollect);
+        }
+        public void TimerIncrease()
+        {
+            PlayPitched(_timerIncreased, 0.6f, 0.7f);
         }
     }
 }

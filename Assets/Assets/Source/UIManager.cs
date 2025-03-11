@@ -17,6 +17,9 @@ namespace Assets.Assets.Source
         [SerializeField] private TextMeshProUGUI _timerText; // Add this field for the timer display
         [SerializeField] private TextMeshProUGUI _levelText; // Add this field for the timer display
         [SerializeField] private TextMeshPro _endgameText;
+        [SerializeField] private TextMeshPro _tutorialText;
+
+        private GameObject _tutorialInstance;
 
         [Header("Popup Settings")]
         public GameObject popupPrefab;
@@ -35,7 +38,7 @@ namespace Assets.Assets.Source
         }
         public void SetGoldText(int amountOfGold)
         {
-            _goldAmountText.text = "Gold: " + amountOfGold;
+            _goldAmountText.text = "$" + amountOfGold;
         }
         // Method to start the countdown
 
@@ -52,13 +55,15 @@ namespace Assets.Assets.Source
             _endgameText.text = "Collected gold: " + gold;
         }
 
-        public void ShowPopup(Vector3 worldPosition)
+        public void ShowPopup(Vector3 worldPosition, Color color, string text = "1")
         {
             // Convert world position to screen space
             Vector2 screenPosition = Camera.main.WorldToScreenPoint(worldPosition);
 
             // Create the popup
             GameObject popup = Instantiate(popupPrefab, parentCanvas.transform);
+            popup.GetComponent<TextMeshProUGUI>().text = text;
+            popup.GetComponent<TextMeshProUGUI>().color = color;
             RectTransform rectTransform = popup.GetComponent<RectTransform>();
 
             // Convert screen position to canvas local position
@@ -81,7 +86,6 @@ namespace Assets.Assets.Source
 
         private IEnumerator AnimatePopup(GameObject popup)
         {
-            var textComponent = popup.GetComponent<TextMeshProUGUI>();
             CanvasGroup canvasGroup = popup.GetComponent<CanvasGroup>();
 
             if (canvasGroup == null)
@@ -108,6 +112,15 @@ namespace Assets.Assets.Source
             }
 
             Destroy(popup);
+        }
+
+        internal void DisplayTutorial()
+        {
+            _tutorialText = Instantiate(_tutorialText, Camera.main.transform);
+        }
+        internal void HideTutorial()
+        {
+            Destroy(_tutorialText.gameObject);
         }
     }
 }
