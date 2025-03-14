@@ -336,7 +336,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.12941177, g: 0.1254902, b: 0.20392159, a: 0}
+  m_BackGroundColor: {r: 0.121568635, g: 0.04705883, b: 0.15294118, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1469,7 +1469,7 @@ AudioSource:
   m_audioClip: {fileID: 8300000, guid: ad8187792f23ae54588f48f267f51027, type: 3}
   m_Resource: {fileID: 8300000, guid: ad8187792f23ae54588f48f267f51027, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.672
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -2040,7 +2040,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'My best: 536'
+  m_text: 'My best: 941'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

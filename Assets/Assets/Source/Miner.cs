@@ -3,67 +3,74 @@ using UnityEngine;
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework.Constraints;
 
 namespace Assets.Assets.Source
 {
     internal class Miner : MonoBehaviour
     {
         public Vector2Int GridPosition;
-
         public Vector2Int FacingDirection;
-
         public bool IsHookBeingThrown = false;
         public bool IsAllowedToMove = true;
 
+        [SerializeField] private Sprite _withDrillSprite;
+        [SerializeField] private Sprite _withoutDrillSprite;
+
         [SerializeField] private GameObject _hook;
-
-        private float lastZMoveTime;
         [SerializeField] private float zMoveCooldown = 0.2f;
-
-        private float bufferedZPressTime = -1f;
         [SerializeField] private float inputBufferWindow = 0.2f;
 
-        private LineRenderer _lineRenderer;
+        private float _lastZMoveTime;
+        private float _bufferedZPressTime = -1f;
+
+        private bool _hookCancelled = false;
+
 
         private GameObject _currentHook = null;
 
+        private SpriteRenderer _spriteRenderer;
         private void Awake()
         {
-            _lineRenderer = GetComponent<LineRenderer>();   
+            _spriteRenderer = GetComponent<SpriteRenderer>();
             FacingDirection = Vector2Int.right;
+            _spriteRenderer.sprite = _withDrillSprite;
         }
+
         public void Start()
         {
-            lastZMoveTime = -zMoveCooldown;
+            _lastZMoveTime = -zMoveCooldown;
         }
+
         public void Update()
         {
-            FacingDirection = ChangeDirection(FacingDirection);
-
-            var worldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y);
-            var facingDirWorldPos = GridManager.Instance.GridToWorldPosition(GridPosition.x + FacingDirection.x, GridPosition.y + FacingDirection.y);
-            _lineRenderer.SetPositions(new[] {new Vector3(worldPos.x, worldPos.y), new Vector3(facingDirWorldPos.x, facingDirWorldPos.y) });
+            Vector2Int newDirection = ChangeDirection(FacingDirection);
+            if (newDirection != FacingDirection)
+            {
+                FacingDirection = newDirection;
+                RotateSprite(FacingDirection);
+            }
 
             if (Input.GetKeyDown(KeyCode.Z))
             {
-                bufferedZPressTime = Time.time;
+                _bufferedZPressTime = Time.time;
             }
 
             if (IsHookBeingThrown)
                 return;
 
-            if (bufferedZPressTime > 0 && Time.time - bufferedZPressTime <= inputBufferWindow)
+            if (_bufferedZPressTime > 0 && Time.time - _bufferedZPressTime <= inputBufferWindow)
             {
                 TryMove();
-                bufferedZPressTime = -1f; // Consume the buffered input
-                lastZMoveTime = Time.time; // Sync with cooldown system
+                _bufferedZPressTime = -1f; // Consume the buffered input
+                _lastZMoveTime = Time.time; // Sync with cooldown system
             }
 
             // Existing cooldown-based movement
-            if (Input.GetKey(KeyCode.Z) && Time.time - lastZMoveTime >= zMoveCooldown)
+            if (Input.GetKey(KeyCode.Z) && Time.time - _lastZMoveTime >= zMoveCooldown)
             {
                 TryMove();
-                lastZMoveTime = Time.time;
+                _lastZMoveTime = Time.time;
             }
 
             if (Input.GetKeyDown(KeyCode.X))
@@ -71,6 +78,7 @@ namespace Assets.Assets.Source
                 StartCoroutine(ThrowHook());
             }
         }
+
         public Vector2Int ChangeDirection(Vector2Int currentDirection)
         {
             // Check for immediate key presses
@@ -93,6 +101,52 @@ namespace Assets.Assets.Source
             // If no key was pressed, return zero (no movement)
             return currentDirection;
         }
+
+        private void RotateSprite(Vector2Int direction)
+        {
+            _spriteRenderer.flipY = false;
+
+            if (direction == Vector2Int.left)
+            {
+                _spriteRenderer.flipY = true; // Flip vertically
+                transform.DORotate(new Vector3(0, 0, 180f), 0.1f); // Reset rotation
+            }
+            else if (direction == Vector2Int.right)
+            {
+                transform.DORotate(Vector3.zero, 0.1f); // Face right
+            }
+            else if (direction == Vector2Int.up)
+            {
+                transform.DORotate(new Vector3(0, 0, 90f), 0.1f); // Rotate up
+            }
+            else if (direction == Vector2Int.down)
+            {
+                transform.DORotate(new Vector3(0, 0, -90f), 0.1f); // Rotate down
+            }
+        }
+        private void RotateHook(GameObject hook, Vector2Int direction)
+        {
+            float targetAngle = 0f;
+
+            if (direction == Vector2Int.up)
+            {
+                targetAngle = 90f;
+            }
+            else if (direction == Vector2Int.down)
+            {
+                targetAngle = -90f;
+            }
+            else if (direction == Vector2Int.left)
+            {
+                targetAngle = 180f;
+            }
+            else if (direction == Vector2Int.right)
+            {
+                targetAngle = 0f;
+            }
+            hook.transform.eulerAngles = new Vector3(0, 0, targetAngle);
+        }
+
         public void TryMove()
         {
             Vector2Int movementPosition = GridPosition + FacingDirection;
@@ -116,18 +170,24 @@ namespace Assets.Assets.Source
 
         public void OnDestroy()
         {
-            if(_currentHook != null)
+            if (_currentHook != null)
+                _currentHook.transform.DOKill();
                 Destroy(_currentHook);
+            transform.DOKill();
         }
+
         public IEnumerator ThrowHook()
         {
+            _spriteRenderer.sprite = _withoutDrillSprite;
             SoundManager.Instance.HookThrow();
             if (!GameDataManager.Instance.UsePowerup())
                 yield break;
             IsHookBeingThrown = true;
 
             var hook = Instantiate(_hook, GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y), Quaternion.identity);
-            _currentHook  = hook;   
+            RotateHook(hook, FacingDirection);
+            hook.GetComponent<HookLineRenderer>().AssignStartingPosition(GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y));
+            _currentHook = hook;
             int directionX = FacingDirection.x;
             int directionY = FacingDirection.y;
 
@@ -137,6 +197,8 @@ namespace Assets.Assets.Source
 
             while (true)
             {
+                if (_hookCancelled)
+                    break;
                 currentPosition.x += directionX;
                 currentPosition.y += directionY;
 
@@ -145,37 +207,19 @@ namespace Assets.Assets.Source
                     break;
                 }
 
-                if (GridManager.Instance.IsCellContainingGold(currentPosition))
-                {
-                    GridManager.Instance.CollectGoldAtPosition(currentPosition);
-                    collectedGoldPositions.Add(currentPosition);
-                }
-
-                if(GridManager.Instance.IsCellContainingObstacle(currentPosition)) 
+                if (GridManager.Instance.IsCellContainingObstacle(currentPosition))
                 {
                     break;
                 }
 
                 if (GridManager.Instance.IsCellContainingWall(currentPosition))
                 {
+                    yield return new WaitForSeconds(0.02f);
                     GridManager.Instance.DamageWallAtPosition(currentPosition);
                 }
-                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
-                yield return new WaitForSeconds(0.03f);
-            }
-
-            while (currentPosition != GridPosition)
-            {
-
-                if (currentPosition.x - directionX == GridPosition.x && currentPosition.y - directionY == GridPosition.y)
-                {
-                    break;
-                }
-                currentPosition.x -= directionX;
-                currentPosition.y -= directionY;
-
                 if (GridManager.Instance.IsCellContainingGold(currentPosition))
                 {
+                    GridManager.Instance.CollectGoldAtPosition(currentPosition);
                     collectedGoldPositions.Add(currentPosition);
                     int timerUp = (int)Math.Floor((double)(collectedGoldPositions.Count / 3));
                     if (timerUp > 0)
@@ -183,13 +227,33 @@ namespace Assets.Assets.Source
                         collectedGoldPositions.RemoveRange(collectedGoldPositions.Count - 1 - timerUp, collectedGoldPositions.Count - 1);
                         GridManager.Instance.IncreaseTimer(timerUp * 2, GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y));
                     }
-                    GridManager.Instance.CollectGoldAtPosition(currentPosition);
+                }
+                var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
+                var tween = hook.transform.DOMove(targetPosition, 0.02f);
+                yield return new WaitForSeconds(0.02f);
+            }
+
+            yield return new WaitForSeconds(0.05f);
+
+            while (currentPosition != GridPosition)
+            {
+                //if (currentPosition.x - directionX == GridPosition.x && currentPosition.y - directionY == GridPosition.y)
+                //{
+                //    break;
+                //}
+                currentPosition.x -= directionX;
+                currentPosition.y -= directionY;
+
+                if (GridManager.Instance.IsCellContainingGold(currentPosition))
+                {
                 }
 
-                hook.transform.position = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
-                yield return new WaitForSeconds(0.03f);
+                var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
+                var tween = hook.transform.DOMove(targetPosition, 0.01f);
+                yield return new WaitForSeconds(0.01f);
             }
             IsHookBeingThrown = false;
+            _spriteRenderer.sprite = _withDrillSprite;
             Destroy(hook);
             yield break;
         }

@@ -31,6 +31,7 @@ namespace Assets.Assets.Source
     {
         public bool GridInitiated { get; private set; } = false;
 
+        public int LevelRequirement = 5;
         public event Action<int> OnGameEnded;
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -44,6 +45,7 @@ namespace Assets.Assets.Source
         private int _goldOnTheLevel = 0;
         private int _countdownTime; // The remaining time in seconds
         private int _levelCount = 0;
+        private int _cycleLevelCount = 0;
         public static GridManager Instance { get; private set; }
 
         private Grid _grid;
@@ -71,6 +73,7 @@ namespace Assets.Assets.Source
         public void CreateLevel(int width, int height)
         {
             _levelCount++;
+            _cycleLevelCount++;
             SoundManager.Instance.LevelComplete();
             Width = width;
             Height = height;
@@ -135,8 +138,6 @@ namespace Assets.Assets.Source
         }
         private void CreateGoldOnWallDestroyed(object sender, WallEventArgs e)
         {
-            var wallGO = _wallLayer[e.GridPosition.x, e.GridPosition.y];
-            Destroy(wallGO);
             _wallLayer[e.GridPosition.x, e.GridPosition.y] = null;
             if (!e.HasGold)
                 return;
@@ -208,14 +209,15 @@ namespace Assets.Assets.Source
         private void ReloadLevel()
         {
             DestroyMap();
-            if(_levelCount % 5 == 0)
+            if(_cycleLevelCount % LevelRequirement == 0)
             {
+                _cycleLevelCount = 0;
                 Width++;
                 Height++;
                 var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
                 IncreaseTimer(5, popupPosition);
             }
-            UIManager.Instance.UpdateLevelText(_levelCount % 5);
+            UIManager.Instance.UpdateLevelText(_cycleLevelCount % LevelRequirement);
             CreateLevel(Width, Height);
         }
         private void DestroyMap()
@@ -301,7 +303,7 @@ namespace Assets.Assets.Source
         // Coroutine to handle the countdown logic
         private IEnumerator Countdown()
         {
-            while (_countdownTime > 0)
+            while (_countdownTime > -2)
             {
                 UIManager.Instance.UpdateTimerDisplay(_countdownTime);
                 yield return new WaitForSeconds(1); // Wait for 1 second

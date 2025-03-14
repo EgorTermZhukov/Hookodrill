@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +23,11 @@ namespace Assets.Assets.Source
     {
         public event EventHandler<WallEventArgs> OnWallDestroyed;
 
+        [SerializeField] private GameObject _wallDestroyParticle;
+        [SerializeField] private GameObject _goldWallDestroyParticle;
+
         private bool _isObstacle;
+
         public bool IsObstacle
         {
             get => _isObstacle;
@@ -43,6 +48,8 @@ namespace Assets.Assets.Source
         [SerializeField] private Sprite _normalWallSprite;
         [SerializeField] private Sprite _goldWallSprite;
 
+        [SerializeField] private Animator _wallAnimator;
+
         private Vector2Int _gridPosition;
 
         private int _durability = 1;
@@ -50,7 +57,7 @@ namespace Assets.Assets.Source
         
         private void Awake()
         {
-            _renderer = GetComponent<SpriteRenderer>();   
+            _renderer = GetComponentInChildren<SpriteRenderer>();   
         }
         private bool _hasGold;
         public bool HasGold
@@ -78,13 +85,36 @@ namespace Assets.Assets.Source
         }
         public void DamageWall(int damage)
         {
-            Debug.Log("Damaged wall");
             _durability = _durability - damage > 0 ? _durability - damage : 0;
             if (_durability == 0)
             {
+                _wallAnimator.SetBool("WasDamaged", true);
                 OnWallDestroyed?.Invoke(this, new WallEventArgs(_gridPosition, HasGold));
+                DestroyWall();
             }
             SoundManager.Instance.WallHit();
+        }
+        private void OnDestroy()
+        {
+        }
+        public void DestroyWall()
+        {
+            StartCoroutine(PlayWallDestroyingSequence());
+        }
+
+        private IEnumerator PlayWallDestroyingSequence()
+        {
+            if (!HasGold)
+            {
+                Instantiate(_wallDestroyParticle, GridManager.Instance.GridToWorldPosition(_gridPosition.x, _gridPosition.y), Quaternion.identity);
+            }
+            else
+            {
+                Instantiate(_goldWallDestroyParticle, GridManager.Instance.GridToWorldPosition(_gridPosition.x, _gridPosition.y), Quaternion.identity);
+            }
+            yield return new WaitForSeconds(0.4f);
+            Destroy(this.gameObject);
+            yield break;
         }
     }
 }

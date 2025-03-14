@@ -46,6 +46,8 @@ namespace Assets.Assets.Source
         public void UpdateTimerDisplay(int timeInSeconds)
         {
             _timerText.text = "Time: " + timeInSeconds.ToString();
+            if (timeInSeconds < 0)
+                _timerText.text = "Time: " + 0;
         }
         public void SetEndgameText(int gold)
         {
@@ -81,7 +83,7 @@ namespace Assets.Assets.Source
         }
         public void UpdateLevelText(int level)
         {
-            _levelText.text = level + "/" + 5;
+            _levelText.text = level + "/" + GridManager.Instance.LevelRequirement;
         }
 
         private IEnumerator AnimatePopup(GameObject popup)
