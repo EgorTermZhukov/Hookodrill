@@ -17,6 +17,8 @@ namespace Assets.Assets.Source
         [SerializeField] private Sprite _withDrillSprite;
         [SerializeField] private Sprite _withoutDrillSprite;
 
+        [SerializeField] private Animator _animator;
+
         [SerializeField] private GameObject _hook;
         [SerializeField] private float zMoveCooldown = 0.2f;
         [SerializeField] private float inputBufferWindow = 0.2f;
@@ -26,13 +28,14 @@ namespace Assets.Assets.Source
 
         private bool _hookCancelled = false;
 
-
         private GameObject _currentHook = null;
 
         private SpriteRenderer _spriteRenderer;
+        private int _timeBonus = 3;
+
         private void Awake()
         {
-            _spriteRenderer = GetComponent<SpriteRenderer>();
+            _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             FacingDirection = Vector2Int.right;
             _spriteRenderer.sprite = _withDrillSprite;
         }
@@ -44,6 +47,14 @@ namespace Assets.Assets.Source
 
         public void Update()
         {
+            if(GridManager.Instance.CountdownTime < 5)
+            {
+                _animator.SetBool("TimerLow", true);
+            }
+            else
+            {
+                _animator.SetBool("TimerLow", false);
+            }
             Vector2Int newDirection = ChangeDirection(FacingDirection);
             if (newDirection != FacingDirection)
             {
@@ -161,7 +172,6 @@ namespace Assets.Assets.Source
             transform.position = worldPosition;
             SoundManager.Instance.Move();
         }
-
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.red;
@@ -225,7 +235,7 @@ namespace Assets.Assets.Source
                     if (timerUp > 0)
                     {
                         collectedGoldPositions.RemoveRange(collectedGoldPositions.Count - 1 - timerUp, collectedGoldPositions.Count - 1);
-                        GridManager.Instance.IncreaseTimer(timerUp * 2, GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y));
+                        GridManager.Instance.IncreaseTimer(timerUp * _timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y));
                     }
                 }
                 var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);

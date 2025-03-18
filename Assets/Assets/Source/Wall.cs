@@ -41,6 +41,7 @@ namespace Assets.Assets.Source
                 else
                 {
                     _isObstacle = false;
+                    _renderer.color = Color.white;
                 }
             }
         }
@@ -100,6 +101,13 @@ namespace Assets.Assets.Source
         public void DestroyWall()
         {
             StartCoroutine(PlayWallDestroyingSequence());
+        }
+
+        public void CarveOutObstacle()
+        {
+            Instantiate(_wallDestroyParticle, GridManager.Instance.GridToWorldPosition(_gridPosition.x, _gridPosition.y), Quaternion.identity);
+            IsObstacle = false;
+            SoundManager.Instance.WallHit();
         }
 
         private IEnumerator PlayWallDestroyingSequence()

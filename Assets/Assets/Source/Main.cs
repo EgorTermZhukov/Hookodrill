@@ -24,7 +24,7 @@ public class Main : MonoBehaviour
         if (!_gameStarted && Keyboard.current.anyKey.wasPressedThisFrame)
         {
             UIManager.Instance.HideTutorial();
-            GridManager.Instance.StartCountdown(60);
+            GridManager.Instance.StartCountdown(25);
             _gameStarted = true;
         }
 
