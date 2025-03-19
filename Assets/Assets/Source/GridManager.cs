@@ -1,16 +1,12 @@
-﻿using NUnit.Framework.Constraints;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
 
 namespace Assets.Assets.Source
 {
@@ -75,7 +71,7 @@ namespace Assets.Assets.Source
         }
         private void Update()
         {
-            if (!_levelStarted && Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Z))
+            if (!_levelStarted && Input.GetKeyDown(KeyCode.X))
             {
                 _levelStarted = true;
             }
@@ -114,12 +110,26 @@ namespace Assets.Assets.Source
                 }
             }
         }
-        private void CreateWalls(int width, int height, GameObject[,] previousLayer)
+        private void CreateWallAtPosition(Vector2Int gridPosition, bool hasGold, bool isObstacle)
+        {
+            var grid = gameObject.GetComponent<Grid>();
+            var worldPosition = grid.CellToWorld(new(gridPosition.x, gridPosition.y, 0));
+            var wall = Instantiate(_wall, worldPosition, Quaternion.identity);
+            var wallComponent = wall.GetComponent<Wall>();
+            wallComponent.IsObstacle = isObstacle;
+
+            if (hasGold)
+                _goldOnTheLevel++;
+
+            wallComponent.AssignGoldAndAddAction(new(gridPosition.x, gridPosition.y), hasGold, CreateGoldOnWallDestroyed);
+
+            _wallLayer[gridPosition.x, gridPosition.y] = wall;
+        }
+        private void CreateWallsOld(int width, int height, GameObject[,] previousLayer)
         {
             if (previousLayer == null)
                 throw new ArgumentNullException(nameof(previousLayer));
 
-            var grid = gameObject.GetComponent<Grid>();
             _wallLayer = new GameObject[width, height];
 
             var random = new System.Random();
@@ -127,7 +137,6 @@ namespace Assets.Assets.Source
             {
                 for (int y = 0; y < height; y++)
                 {
-                    var worldPosition = grid.CellToWorld(new(x, y, 0));
                     var hasWall = random.Next(2) == 0;
                     if (!hasWall)
                         continue;
@@ -141,16 +150,62 @@ namespace Assets.Assets.Source
                     if (hasGold && _levelCount < 10)
                         isAnObstacle = false;
 
-                    var wall = Instantiate(_wall, worldPosition, Quaternion.identity);
-                    var wallComponent = wall.GetComponent<Wall>();
-                    wallComponent.IsObstacle = isAnObstacle;
-
-                    wallComponent.AssignGoldAndAddAction(new(x, y), hasGold, CreateGoldOnWallDestroyed);
-
-                    _wallLayer[x, y] = wall;
+                    CreateWallAtPosition(new(x, y), hasGold, isAnObstacle);
                 }
             }
         }
+        private void GenerateFirstWallRow(int width, int height)
+        {
+            int startX = UnityEngine.Random.Range(0, width - 2);
+            int startY = UnityEngine.Random.Range(0, height - 2);
+
+            bool isHorizontalSlice = UnityEngine.Random.Range(0, 1) == 0 ? false : true;
+
+            var slicePositions = _wallLayer.GetSliceIndices(startX, startY, isHorizontalSlice);
+
+            int goldCount = 0;
+
+            foreach(var position in slicePositions)
+            {
+                if (goldCount >= 3)
+                    break;
+                goldCount++;
+                CreateWallAtPosition(position, true, false);
+            }
+        }
+        private void CreateWalls(int width, int height, GameObject[,] previousLayer)
+        {
+            if (previousLayer == null)
+                throw new ArgumentNullException(nameof(previousLayer));
+
+            _wallLayer = new GameObject[width, height];
+
+            var random = new System.Random();
+
+
+            GenerateFirstWallRow(width, height);
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (_wallLayer[x, y] != null)
+                        continue;
+                    var hasWall = random.Next(2) == 0;
+                    if (!hasWall)
+                        continue;
+
+                    var hasGold = random.Next(2) == 0;
+                    var isAnObstacle = random.Next(4) == 0;
+
+                    if (hasGold && _levelCount < 10)
+                        isAnObstacle = false;
+
+                    CreateWallAtPosition(new(x, y), hasGold, isAnObstacle);
+                }
+            }
+        }
+
         private void CreateGoldOnWallDestroyed(object sender, WallEventArgs e)
         {
             _wallLayer[e.GridPosition.x, e.GridPosition.y] = null;
@@ -186,7 +241,6 @@ namespace Assets.Assets.Source
                     minerComponent.GridPosition = new Vector2Int(x, y);
 
                     _characterLayer[x, y] = minerGO;
-                    Debug.Log("Created miner at " + worldPosition);
                     return;
                 }
             }
@@ -236,6 +290,8 @@ namespace Assets.Assets.Source
                 var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
                 IncreaseTimer(5, popupPosition);
             }
+            if (CountdownTime < 0)
+                CountdownTime = 0;
             UIManager.Instance.UpdateLevelText(_cycleLevelCount % LevelRequirement);
             CreateLevel(Width, Height);
         }
@@ -273,6 +329,9 @@ namespace Assets.Assets.Source
             if (!IsInBounds(movementPosition))
                 return false;
 
+            if(!_levelStarted) 
+                _levelStarted = true;
+
             var wallGO = _wallLayer[movementPosition.x, movementPosition.y];
 
             if (wallGO != null)
@@ -291,7 +350,8 @@ namespace Assets.Assets.Source
             }
 
             _characterLayer[movementPosition.x, movementPosition.y] = goToMove;
-            _characterLayer[currentPosition.x, currentPosition.y] = null;
+            _characterLayer[currentPosition.x, currentPosition.y] = null; 
+
             return true;
         }
         public bool IsInBounds(Vector2Int position)

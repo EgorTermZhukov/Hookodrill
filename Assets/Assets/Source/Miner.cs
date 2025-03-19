@@ -205,6 +205,7 @@ namespace Assets.Assets.Source
 
             List<Vector2Int> collectedGoldPositions = new List<Vector2Int>();
 
+            int collectedGold = 0;
             while (true)
             {
                 if (_hookCancelled)
@@ -230,12 +231,10 @@ namespace Assets.Assets.Source
                 if (GridManager.Instance.IsCellContainingGold(currentPosition))
                 {
                     GridManager.Instance.CollectGoldAtPosition(currentPosition);
-                    collectedGoldPositions.Add(currentPosition);
-                    int timerUp = (int)Math.Floor((double)(collectedGoldPositions.Count / 3));
-                    if (timerUp > 0)
+                    collectedGold++;
+                    if(collectedGold % 3 == 0)
                     {
-                        collectedGoldPositions.RemoveRange(collectedGoldPositions.Count - 1 - timerUp, collectedGoldPositions.Count - 1);
-                        GridManager.Instance.IncreaseTimer(timerUp * _timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y));
+                        GridManager.Instance.IncreaseTimer(_timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition));
                     }
                 }
                 var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
