@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using DG.Tweening;
-using UnityEngine.InputSystem;
-using Unity.VisualScripting;
 
 namespace Assets.Assets.Source
 {
@@ -33,7 +28,7 @@ namespace Assets.Assets.Source
         public int Height { get; private set; }
 
         public int CountdownTime { get; private set; } = 25; 
-        public int LevelStartCountdownTime { get; private set; } = 5;
+        public int LevelStartCountdownTime { get; private set; } = 10;
 
         public static GridManager Instance { get; private set; }
 
@@ -396,7 +391,7 @@ namespace Assets.Assets.Source
             {
                 if (_levelStarted)
                 {
-                    LevelStartCountdownTime = 5;
+                    LevelStartCountdownTime = 10;
                     yield break;
                 }
 
@@ -407,7 +402,7 @@ namespace Assets.Assets.Source
                 LevelStartCountdownTime--;
             }
             _levelStarted = true;
-            LevelStartCountdownTime = 5;
+            LevelStartCountdownTime = 10;
             yield break;
         }
 
@@ -428,6 +423,8 @@ namespace Assets.Assets.Source
         }
         public void IncreaseTimer(int amount, Vector3 popupPlace)
         {
+            if (CountdownTime < 0)
+                CountdownTime = 0;
             SoundManager.Instance.TimerIncrease();
             CountdownTime += amount;
             UIManager.Instance.ShowPopup(popupPlace, Color.green, amount + "s");
