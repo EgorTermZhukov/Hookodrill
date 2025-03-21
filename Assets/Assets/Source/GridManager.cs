@@ -5,24 +5,9 @@ using DG.Tweening;
 
 namespace Assets.Assets.Source
 {
-    public enum Tiles
-    {
-        Empty,
-        Floor,
-        Wall,
-        Character
-    }
-    public enum LayerType
-    {
-        Floor,
-        Wall,
-        Character,
-        Interactable
-    }
     internal class GridManager : MonoBehaviour
     {
         public bool GridInitiated { get; private set; } = false;
-
         public int LevelRequirement { get; private set; } =  5;
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -60,9 +45,6 @@ namespace Assets.Assets.Source
             {
                 Destroy(this);
             }
-        }
-        private void Start()
-        {
         }
         private void Update()
         {
