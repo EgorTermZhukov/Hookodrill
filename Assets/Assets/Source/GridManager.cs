@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Assets.Source;
 using UnityEngine;
 using DG.Tweening;
 
@@ -7,17 +8,15 @@ namespace Assets.Assets.Source
 {
     internal class GridManager : MonoBehaviour
     {
-        public bool GridInitiated { get; private set; } = false;
+        public bool TutorialMode { get; set; } = false;
+        public bool GameStopped { get; set; } = false;
+        public bool ObstaclesSpawning { get; set; } = false;
         public int LevelRequirement { get; private set; } =  5;
         public int Width { get; private set; }
         public int Height { get; private set; }
-
-        public int CountdownTime { get; private set; } = 25; 
-        public int LevelStartCountdownTime { get; private set; } = 10;
-
         public static GridManager Instance { get; private set; }
-
         public event Action<int> OnGameEnded;
+        public event Action OnLevelLoaded;
 
         [SerializeField] private GameObject _miner;
         [SerializeField] private GameObject _wall;
@@ -25,12 +24,10 @@ namespace Assets.Assets.Source
         [SerializeField] private GameObject _enemy;
         [SerializeField] private GameObject _gold;
 
-        private bool _levelStarted = false;
-
         private int _goldOnTheLevel = 0;
 
-        private int _levelCount = 0;
-        private int _cycleLevelCount = 0;
+        public int LevelCount = 0;
+        private int CycleLevelCount = 0;
 
         private GameObject[,] _floorLayer;
         private GameObject[,] _wallLayer;
@@ -48,17 +45,16 @@ namespace Assets.Assets.Source
         }
         private void Update()
         {
-            if (!_levelStarted && Input.GetKeyDown(KeyCode.X))
-            {
-                _levelStarted = true;
-            }
         }
         public void CreateLevel(int width, int height)
         {
-            _levelStarted = false;
-            _levelCount++;
-            _cycleLevelCount++;
-            SoundManager.Instance.LevelComplete();
+            if(TimerManager.Instance != null)
+                TimerManager.Instance.IsLevelStarted = false;
+            if(LevelCount >= 10 && !TutorialMode)
+                ObstaclesSpawning = true;
+            LevelCount++;
+            CycleLevelCount++;
+            //SoundManager.Instance.LevelComplete();
             Width = width;
             Height = height;
 
@@ -66,12 +62,8 @@ namespace Assets.Assets.Source
             CreateWalls(width, height, _floorLayer);
             CreateCharacters(width, height, _wallLayer);
             CreateInteractables(width, height, _characterLayer);
-            GridInitiated = true;
             AdjustCamera();
-            if(_levelCount != 1)
-            {
-                StartCoroutine(LevelStartCountdown());
-            }
+            OnLevelLoaded?.Invoke();
         }
         private void CreateFloor(int width, int height)
         {
@@ -101,35 +93,6 @@ namespace Assets.Assets.Source
             wallComponent.AssignGoldAndAddAction(new(gridPosition.x, gridPosition.y), hasGold, CreateGoldOnWallDestroyed);
 
             _wallLayer[gridPosition.x, gridPosition.y] = wall;
-        }
-        private void CreateWallsOld(int width, int height, GameObject[,] previousLayer)
-        {
-            if (previousLayer == null)
-                throw new ArgumentNullException(nameof(previousLayer));
-
-            _wallLayer = new GameObject[width, height];
-
-            var random = new System.Random();
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    var hasWall = random.Next(2) == 0;
-                    if (!hasWall)
-                        continue;
-
-                    var hasGold = random.Next(2) == 0;
-                    var isAnObstacle = random.Next(4) == 0;
-
-                    if (hasGold == true)
-                        _goldOnTheLevel++;
-
-                    if (hasGold && _levelCount < 10)
-                        isAnObstacle = false;
-
-                    CreateWallAtPosition(new(x, y), hasGold, isAnObstacle);
-                }
-            }
         }
         private void GenerateFirstWallRow(int width, int height)
         {
@@ -175,7 +138,7 @@ namespace Assets.Assets.Source
                     var hasGold = random.Next(2) == 0;
                     var isAnObstacle = random.Next(4) == 0;
 
-                    if (hasGold && _levelCount < 10)
+                    if (!ObstaclesSpawning)
                         isAnObstacle = false;
 
                     CreateWallAtPosition(new(x, y), hasGold, isAnObstacle);
@@ -246,30 +209,36 @@ namespace Assets.Assets.Source
         }
         public void CollectGoldAtPosition(Vector2Int position)
         {
-            //UIManager.Instance.ShowPopup(GridToWorldPosition(position.x, position.y), Color.yellow);
             SoundManager.Instance.GoldCollect();
             _goldOnTheLevel--;
-            GameDataManager.Instance.AmountOfGoldInInventory++;
+            int goldValue = 1;
+            if (GameDataManager.Instance != null && TimerManager.Instance != null)
+            {
+                if (TimerManager.Instance.CountdownTime > TimerManager.ScoreMultiplicationBarrierTime)
+                    goldValue = 2;
+                GameDataManager.Instance.AmountOfGoldInInventory += goldValue;
+            }
             var goldGO = _interactableLayer[position.x, position.y];
             Destroy(goldGO);
             _interactableLayer[position.x, position.y] = null;
+            //if(TimerManager.Instance.CountdownTime > TimerManager.ScoreMultiplicationBarrierTime)
+            //    UIManager.Instance.ShowPopup(GridToWorldPosition(position.x, position.y), Color.yellow, goldValue.ToString() + "$");
             if (_goldOnTheLevel <= 0)
                 GridManager.Instance.ReloadLevel();
         }
         private void ReloadLevel()
         {
             DestroyMap();
-            if(_cycleLevelCount % LevelRequirement == 0)
+            if(!TutorialMode && CycleLevelCount % LevelRequirement == 0)
             {
-                _cycleLevelCount = 0;
+                CycleLevelCount = 0;
                 Width++;
                 Height++;
                 var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
-                IncreaseTimer(5, popupPosition);
+                //IncreaseTimer(5, popupPosition);
             }
-            if (CountdownTime < 0)
-                CountdownTime = 0;
-            UIManager.Instance.UpdateLevelText(_cycleLevelCount % LevelRequirement);
+            if(!TutorialMode)
+                UIManager.Instance.UpdateLevelText(CycleLevelCount % LevelRequirement);
             CreateLevel(Width, Height);
         }
         private void DestroyMap()
@@ -306,8 +275,8 @@ namespace Assets.Assets.Source
             if (!IsInBounds(movementPosition))
                 return false;
 
-            if(!_levelStarted) 
-                _levelStarted = true;
+            if(TimerManager.Instance != null && !TimerManager.Instance.IsLevelStarted) 
+                TimerManager.Instance.IsLevelStarted = true;
 
             var wallGO = _wallLayer[movementPosition.x, movementPosition.y];
 
@@ -357,64 +326,10 @@ namespace Assets.Assets.Source
             var obstacle = go.GetComponent<Wall>();
             return obstacle.IsObstacle;
         }
-        public void StartCountdown(int durationInSeconds)
-        {
-            CountdownTime = durationInSeconds;
-            StartCoroutine(Countdown());
-        }
-
-        public bool LevelStarted()
-        {
-            return _levelStarted;
-        }
-        private IEnumerator LevelStartCountdown()
-        {
-            while (LevelStartCountdownTime > 0)
-            {
-                if (_levelStarted)
-                {
-                    LevelStartCountdownTime = 10;
-                    yield break;
-                }
-
-                var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
-
-                UIManager.Instance.ShowPopup(popupPosition, Color.green, LevelStartCountdownTime.ToString());
-                yield return new WaitForSeconds(1);
-                LevelStartCountdownTime--;
-            }
-            _levelStarted = true;
-            LevelStartCountdownTime = 10;
-            yield break;
-        }
-
-        // Coroutine to handle the countdown logic
-        private IEnumerator Countdown()
-        {
-            while (CountdownTime > -2)
-            {
-                yield return new WaitUntil(LevelStarted);
-                UIManager.Instance.UpdateTimerDisplay(CountdownTime);
-                yield return new WaitForSeconds(1); // Wait for 1 second
-                CountdownTime--;
-            }
-
-            // When the countdown reaches 0
-            UIManager.Instance.UpdateTimerDisplay(0);
-            FinishGame();
-        }
-        public void IncreaseTimer(int amount, Vector3 popupPlace)
-        {
-            if (CountdownTime < 0)
-                CountdownTime = 0;
-            SoundManager.Instance.TimerIncrease();
-            CountdownTime += amount;
-            UIManager.Instance.ShowPopup(popupPlace, Color.green, amount + "s");
-            UIManager.Instance.UpdateTimerDisplay(CountdownTime);
-        }
-        private void FinishGame()
+        public void FinishGame()
         {
             DestroyMap();
+            UIManager.Instance.PlayGameEndSequence();
             OnGameEnded?.Invoke(GameDataManager.Instance.AmountOfGoldInInventory);
         }
         private void AdjustCamera()
@@ -462,6 +377,13 @@ namespace Assets.Assets.Source
 
             // Use DoTween to smoothly adjust the orthographic size
             cam.DOOrthoSize(finalOrthoSize, 1f).SetEase(Ease.OutQuad);
+        }
+
+        public void WinGame()
+        {
+            DOTween.KillAll();
+            DestroyMap();
+            TimerManager.Instance.IsTimerRunning = false;
         }
     }
 }

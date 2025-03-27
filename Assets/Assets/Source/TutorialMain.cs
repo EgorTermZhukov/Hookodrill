@@ -6,11 +6,9 @@ namespace Assets.Source
 {
     public class TutorialMain : MonoBehaviour
     {
-        [SerializeField] TutorialSequencer _tutorialSequencerPrefab;
-        private TutorialSequencer _tutorialSequencerInstance;
+        [SerializeField] private TutorialSequencer _tutorialSequencerInstance;
         void Start()
         {
-            _tutorialSequencerInstance = Instantiate(_tutorialSequencerPrefab);
             _tutorialSequencerInstance.PlayTutorial();
         }
         void Update()

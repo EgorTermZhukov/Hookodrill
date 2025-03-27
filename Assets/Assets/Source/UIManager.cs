@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using static Assets.Assets.Source.TextBoxManager;
 
 namespace Assets.Assets.Source
 {
@@ -18,6 +19,8 @@ namespace Assets.Assets.Source
         [SerializeField] private TextMeshProUGUI _levelText; // Add this field for the timer display
         [SerializeField] private TextMeshPro _endgameText;
         [SerializeField] private TextMeshPro _tutorialText;
+        [SerializeField] private TextMeshPro _highScoreText;
+        [SerializeField] private GameObject _dialogue;
 
         private GameObject _tutorialInstance;
 
@@ -48,6 +51,18 @@ namespace Assets.Assets.Source
             _timerText.text = "Time: " + timeInSeconds.ToString();
             if (timeInSeconds < 0)
                 _timerText.text = "Time: " + 0;
+            if (timeInSeconds > 30)
+            {
+                _timerText.color = Color.cyan;
+            }
+            else if  (timeInSeconds > 5)
+            {
+                _timerText.color = Color.green;
+            }
+            else
+            {
+                _timerText.color = Color.red;
+            }
         }
         public void SetEndgameText(int gold)
         {
@@ -123,6 +138,30 @@ namespace Assets.Assets.Source
         internal void HideTutorial()
         {
             Destroy(_tutorialText.gameObject);
+        }
+
+        public void PlayGameEndSequence()
+        {
+            StartCoroutine(GameEndSequence());
+        }
+
+        public void SetHighscoreText(int amountOfGoldInInventory)
+        {
+            _highScoreText.text = "Current score: " + amountOfGoldInInventory;
+        }
+
+        private IEnumerator GameEndSequence()
+        {
+            _dialogue.SetActive(true);
+            TextBoxManager.Instance.WriteText($"You got {GameDataManager.Instance.AmountOfGoldInInventory}$");
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            TextBoxManager.Instance.WriteText($"Your best was {GameDataManager.Instance.CurrentBest}$");
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            TextBoxManager.Instance.WriteText($"You need {GameDataManager.WinCondition}");
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            TextBoxManager.Instance.WriteText("Not enough, try again!");
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            Main.ReloadGame();
         }
     }
 }

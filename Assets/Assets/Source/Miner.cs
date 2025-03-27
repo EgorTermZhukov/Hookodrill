@@ -3,6 +3,7 @@ using UnityEngine;
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.Source;
 using NUnit.Framework.Constraints;
 
 namespace Assets.Assets.Source
@@ -47,7 +48,7 @@ namespace Assets.Assets.Source
 
         public void Update()
         {
-            if(GridManager.Instance.CountdownTime < 5)
+            if(TimerManager.Instance != null && TimerManager.Instance.CountdownTime < 5)
             {
                 _animator.SetBool("TimerLow", true);
             }
@@ -55,6 +56,8 @@ namespace Assets.Assets.Source
             {
                 _animator.SetBool("TimerLow", false);
             }
+            if (GridManager.Instance.GameStopped)
+                return;
             Vector2Int newDirection = ChangeDirection(FacingDirection);
             if (newDirection != FacingDirection)
             {
@@ -92,25 +95,30 @@ namespace Assets.Assets.Source
 
         public Vector2Int ChangeDirection(Vector2Int currentDirection)
         {
+            var directionToReturn = currentDirection;
             // Check for immediate key presses
             if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
             {
-                return Vector2Int.up; // Move up
+                directionToReturn = Vector2Int.up; // Move up
             }
             else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
             {
-                return Vector2Int.down; // Move down
+                directionToReturn = Vector2Int.down; // Move down
             }
             else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
             {
-                return Vector2Int.left; // Move left
+                directionToReturn = Vector2Int.left; // Move left
             }
             else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
             {
-                return Vector2Int.right; // Move right
+                directionToReturn = Vector2Int.right; // Move right
             }
-            // If no key was pressed, return zero (no movement)
-            return currentDirection;
+
+            if (directionToReturn != currentDirection)
+            {
+                _lastZMoveTime = Time.time - zMoveCooldown / 1.75f;
+            }
+            return directionToReturn;
         }
 
         private void RotateSprite(Vector2Int direction)
@@ -182,7 +190,7 @@ namespace Assets.Assets.Source
         {
             if (_currentHook != null)
                 _currentHook.transform.DOKill();
-                Destroy(_currentHook);
+            Destroy(_currentHook);
             transform.DOKill();
         }
 
@@ -190,8 +198,6 @@ namespace Assets.Assets.Source
         {
             _spriteRenderer.sprite = _withoutDrillSprite;
             SoundManager.Instance.HookThrow();
-            if (!GameDataManager.Instance.UsePowerup())
-                yield break;
             IsHookBeingThrown = true;
 
             var hook = Instantiate(_hook, GridManager.Instance.GridToWorldPosition(GridPosition.x, GridPosition.y), Quaternion.identity);
@@ -220,6 +226,7 @@ namespace Assets.Assets.Source
 
                 if (GridManager.Instance.IsCellContainingObstacle(currentPosition))
                 {
+                    SoundManager.Instance.ObstacleHit();
                     break;
                 }
 
@@ -234,7 +241,8 @@ namespace Assets.Assets.Source
                     collectedGold++;
                     if(collectedGold % 3 == 0)
                     {
-                        GridManager.Instance.IncreaseTimer(_timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition));
+                        if(TimerManager.Instance != null)
+                            TimerManager.Instance.IncreaseTimer(_timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition));
                     }
                 }
                 var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
@@ -246,16 +254,8 @@ namespace Assets.Assets.Source
 
             while (currentPosition != GridPosition)
             {
-                //if (currentPosition.x - directionX == GridPosition.x && currentPosition.y - directionY == GridPosition.y)
-                //{
-                //    break;
-                //}
                 currentPosition.x -= directionX;
                 currentPosition.y -= directionY;
-
-                if (GridManager.Instance.IsCellContainingGold(currentPosition))
-                {
-                }
 
                 var targetPosition = GridManager.Instance.GridToWorldPosition(currentPosition.x, currentPosition.y);
                 var tween = hook.transform.DOMove(targetPosition, 0.01f);
