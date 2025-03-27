@@ -157,10 +157,29 @@ namespace Assets.Assets.Source
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             TextBoxManager.Instance.WriteText($"Your best was {GameDataManager.Instance.CurrentBest}$");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            TextBoxManager.Instance.WriteText($"You need {GameDataManager.WinCondition}");
+            TextBoxManager.Instance.WriteText($"You need {GameDataManager.WinCondition}$");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            TextBoxManager.Instance.WriteText("Not enough, try again!");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            if (GameDataManager.Instance.AmountOfGoldInInventory < 200)
+            {
+                TextBoxManager.Instance.WriteText("Good, but not enough, try again!");
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            }
+            else if(GameDataManager.Instance.AmountOfGoldInInventory < 300)
+            {
+                TextBoxManager.Instance.WriteText("That is pretty close, you're getting good at this!");
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+                TextBoxManager.Instance.WriteText("But it's still not enough, try again!");
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            }
+            else
+            {
+                TextBoxManager.Instance.WriteText("You almost did it!", GoldGuyFace.TongueOut);
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+                TextBoxManager.Instance.WriteText("Just " + (GameDataManager.WinCondition - GameDataManager.Instance.AmountOfGoldInInventory).ToString() + "$ left!", GoldGuyFace.TongueOut);
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+                TextBoxManager.Instance.WriteText("Try again, you can definitely do it this time");
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            }
             Main.ReloadGame();
         }
     }

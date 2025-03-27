@@ -87,7 +87,7 @@ namespace Assets.Assets.Source
                 _lastZMoveTime = Time.time;
             }
 
-            if (Input.GetKeyDown(KeyCode.X))
+            if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.K))
             {
                 StartCoroutine(ThrowHook());
             }
@@ -241,6 +241,7 @@ namespace Assets.Assets.Source
                     collectedGold++;
                     if(collectedGold % 3 == 0)
                     {
+                        GameDataManager.Instance.HookPowerCount++;
                         if(TimerManager.Instance != null)
                             TimerManager.Instance.IncreaseTimer(_timeBonus, GridManager.Instance.GridToWorldPosition(currentPosition));
                     }

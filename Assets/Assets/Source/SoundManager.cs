@@ -61,16 +61,15 @@ namespace Assets.Assets.Source
         }
         public void WallHit()
         {
-            PlayPitchedSequenced(_wallHit, 0.8f, 0.9f);
+            PlayPitched(_wallHit, 0.8f, 0.9f);
         }
-
         public void ObstacleHit()
         {
             PlayPitched(_obstacleHit, 0.8f, 0.9f);
         }
         public void Move()
         {
-            PlayPitchedSequenced(_move);
+            PlayPitched(_move);
         }
         public void GoldCollect() 
         {

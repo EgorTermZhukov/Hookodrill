@@ -48,6 +48,7 @@ namespace Assets.Assets.Source
         }
         public void CreateLevel(int width, int height)
         {
+            GameDataManager.Instance.LevelCount++;
             if(TimerManager.Instance != null)
                 TimerManager.Instance.IsLevelStarted = false;
             if(LevelCount >= 10 && !TutorialMode)

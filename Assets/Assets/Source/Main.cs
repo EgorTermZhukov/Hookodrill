@@ -11,6 +11,7 @@ public class Main : MonoBehaviour
     [SerializeField] private Transform _endGamePosition;
     [SerializeField] private Transform _gameWinPosition;
     private GridManager _gridManager;
+    private bool gameWasComplete = false;
 
     private bool _gameStarted = false;
     void Start()
@@ -22,10 +23,14 @@ public class Main : MonoBehaviour
     }
     void Update()
     {
+        if (gameWasComplete)
+            return;
         if (GameDataManager.Instance.AmountOfGoldInInventory >= GameDataManager.WinCondition)
         {
+            gameWasComplete = true;
             GridManager.Instance.WinGame();
             GoToWinScreen();
+            GameDataManager.Instance.GameComplete();
             UIManager.Instance.SetEndgameText(666);
             return;
         }

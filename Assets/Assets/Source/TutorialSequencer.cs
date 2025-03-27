@@ -187,9 +187,10 @@ namespace Assets.Assets.Source
             TextBoxManager.Instance.WriteText($"If you get {GameDataManager.WinCondition}$ i will let you free");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("You can't run from me", GoldGuyFace.TongueOut);
+            TextBoxManager.Instance.WriteText("Good luck", GoldGuyFace.TongueOut);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             DOTween.KillAll();
+            GameDataManager.Instance.TutorialComplete();
             GameDataManager.Instance.ReloadGame();
             //SceneManager.LoadScene(SceneManager.GetSceneByName("MainScene").buildIndex);
             SceneManager.LoadScene("Scenes/MainScene");
