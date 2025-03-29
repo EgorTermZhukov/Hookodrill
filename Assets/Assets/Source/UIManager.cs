@@ -155,16 +155,26 @@ namespace Assets.Assets.Source
             _dialogue.SetActive(true);
             TextBoxManager.Instance.WriteText($"You got {GameDataManager.Instance.AmountOfGoldInInventory}$");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            
             TextBoxManager.Instance.WriteText($"Your best was {GameDataManager.Instance.CurrentBest}$");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            TextBoxManager.Instance.WriteText($"You need {GameDataManager.WinCondition}$");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            if (GameDataManager.Instance.AmountOfGoldInInventory < 200)
+            
+            if (!GameDataManager.InfiniteMode)
+            {
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+                TextBoxManager.Instance.WriteText($"You need {GameDataManager.WinCondition}$");
+            }
+            if (GameDataManager.InfiniteMode)
+            {
+                TextBoxManager.Instance.WriteText("Good job, thank you for the dedication, would you like to try again?");
+                yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            }
+            else if (GameDataManager.Instance.AmountOfGoldInInventory < 100)
             {
                 TextBoxManager.Instance.WriteText("Good, but not enough, try again!");
                 yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             }
-            else if(GameDataManager.Instance.AmountOfGoldInInventory < 300)
+            else if(GameDataManager.Instance.AmountOfGoldInInventory < 200)
             {
                 TextBoxManager.Instance.WriteText("That is pretty close, you're getting good at this!");
                 yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);

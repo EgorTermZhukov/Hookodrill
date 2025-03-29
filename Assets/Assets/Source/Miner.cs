@@ -28,17 +28,20 @@ namespace Assets.Assets.Source
         private float _bufferedZPressTime = -1f;
 
         private bool _hookCancelled = false;
+        private bool _allowedToMove = false;
 
         private GameObject _currentHook = null;
 
         private SpriteRenderer _spriteRenderer;
         private int _timeBonus = 3;
+        private float _startTime;
 
         private void Awake()
         {
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             FacingDirection = Vector2Int.right;
             _spriteRenderer.sprite = _withDrillSprite;
+            _startTime = Time.time;
         }
 
         public void Start()
@@ -65,14 +68,23 @@ namespace Assets.Assets.Source
                 RotateSprite(FacingDirection);
             }
 
+            if (IsHookBeingThrown)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.K))
+            {
+                _allowedToMove = true;
+                StartCoroutine(ThrowHook());
+            }
+            if ((Time.time - _startTime) < 0.5f && !_allowedToMove)
+                return;
+            _allowedToMove = true;
+            
             if (Input.GetKeyDown(KeyCode.Z))
             {
                 _bufferedZPressTime = Time.time;
             }
-
-            if (IsHookBeingThrown)
-                return;
-
+            
             if (_bufferedZPressTime > 0 && Time.time - _bufferedZPressTime <= inputBufferWindow)
             {
                 TryMove();
@@ -87,10 +99,6 @@ namespace Assets.Assets.Source
                 _lastZMoveTime = Time.time;
             }
 
-            if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.K))
-            {
-                StartCoroutine(ThrowHook());
-            }
         }
 
         public Vector2Int ChangeDirection(Vector2Int currentDirection)

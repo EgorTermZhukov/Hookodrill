@@ -18,6 +18,9 @@ namespace Assets.Assets.Source
         [SerializeField] private GameObject arrow;
         [SerializeField] private GameObject moveInputs;
         [SerializeField] private GameObject hookInputs;
+        [SerializeField] private GameObject skipText;
+
+        private bool _tutorialSkipped = false;
         public void PlayTutorial()
         {
             StartCoroutine(TutorialSequence());
@@ -37,7 +40,7 @@ namespace Assets.Assets.Source
             
             TextBoxManager.Instance.WriteText("You fell through a hole in the ground, you are in my cave now");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            
+            skipText.SetActive(false);
             TextBoxManager.Instance.WriteText("Stand up and move!");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
@@ -122,7 +125,10 @@ namespace Assets.Assets.Source
             TextBoxManager.Instance.WriteText("I really like the number 3", GoldGuyFace.TongueOut);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Hook 3 gold in a line and i will give you 3 seconds");
+            TextBoxManager.Instance.WriteText("Collect 3 gold in one hook throw and i will give you 3 seconds");
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            
+            TextBoxManager.Instance.WriteText("They don't have to be touching");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
             TextBoxManager.Instance.WriteText("This is your ONLY way to survive", GoldGuyFace.TongueOut);
@@ -197,6 +203,18 @@ namespace Assets.Assets.Source
         }
         public void Update()
         {
+            if (_tutorialSkipped)
+                return;
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                GameDataManager.InfiniteMode = true;
+                DOTween.KillAll();
+                _tutorialSkipped = true;
+                StopAllCoroutines();
+                GameDataManager.Instance.SkipTutorial();
+                GameDataManager.Instance.ReloadGame();
+                SceneManager.LoadScene("Scenes/MainScene");
+            }
         }
     }
 }

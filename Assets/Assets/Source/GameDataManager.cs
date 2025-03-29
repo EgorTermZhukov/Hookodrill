@@ -12,10 +12,11 @@ namespace Assets.Assets.Source
     internal class GameDataManager : MonoBehaviour
     {
         private int _amountOfGoldInInventory = 0;
-        public int CurrentBest { get; private set; }  = 0;
+        public int CurrentBest { get; set; }  = 0;
         public int HookPowerCount { get; set; } = 0;
         
-        public static int WinCondition = 500;
+        public static int WinCondition = 333;
+        public static bool InfiniteMode = false;
         private bool _analyticsInitialized = false;
 
         public int LevelCount { get; set; }
@@ -26,6 +27,16 @@ namespace Assets.Assets.Source
             {
                 _amountOfGoldInInventory = value;
                 UIManager.Instance.SetGoldText(value);
+                if (!InfiniteMode && AmountOfGoldInInventory > WinCondition)
+                {
+                    AmountOfGoldInInventory = WinCondition;
+                }
+
+                if (ProgressBarManager.Instance != null)
+                {
+                    float progress = AmountOfGoldInInventory * (1f / WinCondition);
+                    ProgressBarManager.Instance.UpdateProgressBar(progress);
+                }
             }
         }
         private async void Awake()
@@ -38,23 +49,28 @@ namespace Assets.Assets.Source
                 return;
             }
             DontDestroyOnLoad(this.gameObject);
+#if !UNITY_EDITOR
+            
             await UnityServices.InitializeAsync();
             AnalyticsService.Instance.StartDataCollection();
             _analyticsInitialized = true;
+#endif
         }
 
         public void FinishGame()
         {
+            ProgressBarManager.Instance.Hide();
             if (_amountOfGoldInInventory > CurrentBest)
             {
                 CurrentBest = _amountOfGoldInInventory;
             }
-            UIManager.Instance.SetHighscoreText(CurrentBest);
+            
             if (!_analyticsInitialized)
                 return;
             var currentPlaytime = Time.time;
-            CustomEvent analyticsEvent = new CustomEvent("GameLost")
+            CustomEvent analyticsEvent = new CustomEvent("GameOver")
             {
+                {"infinite_mode", InfiniteMode},
                 { "level_count", LevelCount },
                 { "amount_of_gold", AmountOfGoldInInventory },
                 { "hook_power_count", HookPowerCount},
@@ -83,6 +99,7 @@ namespace Assets.Assets.Source
 
         public void GameComplete()
         {
+            ProgressBarManager.Instance.Hide();
             if (!_analyticsInitialized)
                 return;
             var currentPlaytime = Time.time;
@@ -92,14 +109,17 @@ namespace Assets.Assets.Source
             };
             AnalyticsService.Instance.RecordEvent(analyticsEvent);
             AnalyticsService.Instance.Flush();
-            AnalyticsService.Instance.StopDataCollection();
         }
         public void ReloadGame()
         {
             _amountOfGoldInInventory = 0;
+        }
+
+        public void SkipTutorial()
+        {
             if (!_analyticsInitialized)
                 return;
-            CustomEvent analyticsEvent = new CustomEvent("GameRestarted")
+            CustomEvent analyticsEvent = new CustomEvent("TutorialSkipped")
             {
             };
             AnalyticsService.Instance.RecordEvent(analyticsEvent);

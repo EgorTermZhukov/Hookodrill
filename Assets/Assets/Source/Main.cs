@@ -24,14 +24,19 @@ public class Main : MonoBehaviour
     void Update()
     {
         if (gameWasComplete)
+        {
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                GameDataManager.InfiniteMode = true;
+                ReloadGame();
+            }
             return;
-        if (GameDataManager.Instance.AmountOfGoldInInventory >= GameDataManager.WinCondition)
+        }
+        if (GameDataManager.Instance.AmountOfGoldInInventory >= GameDataManager.WinCondition && !GameDataManager.InfiniteMode)
         {
             gameWasComplete = true;
             GridManager.Instance.WinGame();
             GoToWinScreen();
-            GameDataManager.Instance.GameComplete();
-            UIManager.Instance.SetEndgameText(666);
             return;
         }
         if (!_gameStarted && Keyboard.current.anyKey.wasPressedThisFrame)
@@ -65,6 +70,8 @@ public class Main : MonoBehaviour
 
     private void GoToWinScreen()
     {
+        GameDataManager.Instance.GameComplete();
+        GameDataManager.Instance.CurrentBest = GameDataManager.Instance.AmountOfGoldInInventory;
         DOTween.KillAll();
         Camera.main.transform.position = new Vector3(_gameWinPosition.position.x, _gameWinPosition.position.y, Camera.main.transform.position.z);
     }

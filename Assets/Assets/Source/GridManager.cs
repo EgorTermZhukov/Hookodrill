@@ -268,8 +268,10 @@ namespace Assets.Assets.Source
 
         public void DamageWallAtPosition(Vector2Int position)
         {
-            var wallToDamage = _wallLayer[position.x, position.y].GetComponent<Wall>();
-            wallToDamage.DamageWall(1);
+            var wallToDamage = _wallLayer[position.x, position.y];
+            if(wallToDamage == null)
+                return;
+            wallToDamage.GetComponent<Wall>().DamageWall(1);
         }
         public bool AskForMove(GameObject goToMove, Vector2Int currentPosition, Vector2Int movementPosition)
         {
