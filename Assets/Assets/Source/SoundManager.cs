@@ -57,7 +57,7 @@ namespace Assets.Assets.Source
 
         public void HookThrow()
         {
-            PlayPitched(_hookThrow, 0.6f, 0.7f);
+            PlayPitched(_hookThrow, 0.7f, 0.8f);
         }
         public void WallHit()
         {

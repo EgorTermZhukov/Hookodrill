@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using static Assets.Assets.Source.TextBoxManager;
@@ -22,6 +23,8 @@ namespace Assets.Assets.Source
         [SerializeField] private TextMeshPro _highScoreText;
         [SerializeField] private GameObject _dialogue;
 
+        [SerializeField] private Animator _animator;
+
         private GameObject _tutorialInstance;
 
         [Header("Popup Settings")]
@@ -39,21 +42,28 @@ namespace Assets.Assets.Source
                 Destroy(this);
             }
         }
-        public void SetGoldText(int amountOfGold)
+        public void SetGoldText(int amountOfGold, float shakeIntensity = 2f)
         {
+            //_goldAmountText.rectTransform.DOKill();
+            //_goldAmountText.rectTransform.localScale = new (1, 1, 1);
+            //_goldAmountText.rectTransform.DOShakeScale(0.1f);
             _goldAmountText.text = "$" + amountOfGold;
         }
         // Method to start the countdown
 
         // Method to update the timer display
-        public void UpdateTimerDisplay(int timeInSeconds)
+        public void UpdateTimerDisplay(int timeInSeconds, bool shake = false)
         {
+            //_timerText.rectTransform.DOKill();
             _timerText.text = "Time: " + timeInSeconds.ToString();
+            //_timerText.rectTransform.localScale = new Vector3(1f, 1f, 1f);
+            //if(shake)
+            //    _timerText.rectTransform.DOShakeScale(0.1f);
             if (timeInSeconds < 0)
                 _timerText.text = "Time: " + 0;
             if (timeInSeconds > 30)
             {
-                _timerText.color = Color.cyan;
+                _timerText.color = Color.magenta;
             }
             else if  (timeInSeconds > 5)
             {
@@ -66,10 +76,7 @@ namespace Assets.Assets.Source
         }
         public void SetEndgameText(int gold)
         {
-            Destroy(_goldAmountText);
-            Destroy(_timerText);
-            Destroy(_levelText);
-            _endgameText.text = "Collected gold: " + gold;
+            DisableHUD();
         }
 
         public void ShowPopup(Vector3 worldPosition, Color color, string text = "1")
@@ -138,6 +145,26 @@ namespace Assets.Assets.Source
         internal void HideTutorial()
         {
             Destroy(_tutorialText.gameObject);
+        }
+
+        public void DisableHUD()
+        {
+            _timerText.gameObject.SetActive(false); 
+            _levelText.gameObject.SetActive(false);
+            _goldAmountText.gameObject.SetActive(false);
+        }
+
+        public void ApplyDissolve()
+        {
+            _animator.SetBool("Dissolve", true);
+            Debug.Log("AppliedDissolve!" + _animator.GetBool("Dissolve"));
+        }
+
+        public void EnableHUD()
+        {
+            _timerText.gameObject.SetActive(true); 
+            _levelText.gameObject.SetActive(true);
+            _goldAmountText.gameObject.SetActive(true);
         }
 
         public void PlayGameEndSequence()

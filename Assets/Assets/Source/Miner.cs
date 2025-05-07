@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Assets.Source;
 using NUnit.Framework.Constraints;
+using Vector2Int = UnityEngine.Vector2Int;
 
 namespace Assets.Assets.Source
 {
@@ -29,6 +30,7 @@ namespace Assets.Assets.Source
 
         private bool _hookCancelled = false;
         private bool _allowedToMove = false;
+        private bool _dissolved = false;
 
         private GameObject _currentHook = null;
 
@@ -127,6 +129,11 @@ namespace Assets.Assets.Source
                 _lastZMoveTime = Time.time - zMoveCooldown / 1.75f;
             }
             return directionToReturn;
+        }
+
+        public void Dissolve()
+        {
+            _animator.SetBool("Dissolve", true);
         }
 
         private void RotateSprite(Vector2Int direction)

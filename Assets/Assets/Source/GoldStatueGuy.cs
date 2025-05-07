@@ -20,7 +20,7 @@ public class GoldStatueGuy : MonoBehaviour
     }
     public void Shake()
     {
-        _rectTransform.DOShakeRotation(0.3f, 10f).SetEase(Ease.OutBounce);
+        _rectTransform.DOShakeAnchorPos(0.5f, 2f);
     }
 
     public void SetFace(GoldGuyFace face)

@@ -11,6 +11,7 @@ namespace Assets.Source
         public int CountdownTime { get; set; } = 30;
         public bool IsTimerRunning { get; set; } = false;
         public bool IsLevelStarted { get; set; } = false;
+        public bool TimerEnded { get; private set; } = false;
         public static int MaxCountdownTime { get; set; } = 35;
         public static int ScoreMultiplicationBarrierTime { get; set; } = 30;
 
@@ -67,7 +68,7 @@ namespace Assets.Source
 
                 var popupPosition = GridManager.Instance.GridToWorldPosition((GridManager.Instance.Width - 1) / 2, (GridManager.Instance.Height - 1) / 2);
 
-                UIManager.Instance.ShowPopup(popupPosition, Color.green, LevelStartCountdownTime.ToString());
+                UIManager.Instance.ShowPopup(popupPosition, Color.cyan, LevelStartCountdownTime.ToString());
                 yield return new WaitForSeconds(1);
                 LevelStartCountdownTime--;
             }
@@ -85,10 +86,12 @@ namespace Assets.Source
                 yield return new WaitForSeconds(1);
                 CountdownTime--;
             }
-
             UIManager.Instance.UpdateTimerDisplay(0);
-            if(!GridManager.Instance.TutorialMode)
+            if (!GridManager.Instance.TutorialMode)
+            {
                 GridManager.Instance.FinishGame();
+                TimerEnded = true;
+            }
             else
             {
                 StartCountdown(30);
@@ -106,7 +109,7 @@ namespace Assets.Source
             }
             SoundManager.Instance.TimerIncrease();
             UIManager.Instance.ShowPopup(popupPlace, Color.green, amount + "s");
-            UIManager.Instance.UpdateTimerDisplay(CountdownTime);
+            UIManager.Instance.UpdateTimerDisplay(CountdownTime, true);
         }
 
         public void SetCurrentTime(int timeInSeconds)

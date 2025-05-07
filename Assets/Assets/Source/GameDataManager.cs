@@ -31,7 +31,6 @@ namespace Assets.Assets.Source
                 {
                     AmountOfGoldInInventory = WinCondition;
                 }
-
                 if (ProgressBarManager.Instance != null)
                 {
                     float progress = AmountOfGoldInInventory * (1f / WinCondition);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Assets.Source;
 using UnityEngine;
 using DG.Tweening;
@@ -34,6 +35,8 @@ namespace Assets.Assets.Source
         private GameObject[,] _characterLayer;
         private GameObject[,] _interactableLayer;
 
+        private List<Wall> _firstWalls;
+
         private void Awake()
         {
             if (Instance == null)
@@ -41,7 +44,9 @@ namespace Assets.Assets.Source
             else
             {
                 Destroy(this);
+                return;
             }
+            _firstWalls = new List<Wall>();
         }
         private void Update()
         {
@@ -80,13 +85,16 @@ namespace Assets.Assets.Source
                 }
             }
         }
-        private void CreateWallAtPosition(Vector2Int gridPosition, bool hasGold, bool isObstacle)
+        private Wall CreateWallAtPosition(Vector2Int gridPosition, bool hasGold, bool isObstacle, bool isShining = false)
         {
             var grid = gameObject.GetComponent<Grid>();
             var worldPosition = grid.CellToWorld(new(gridPosition.x, gridPosition.y, 0));
             var wall = Instantiate(_wall, worldPosition, Quaternion.identity);
             var wallComponent = wall.GetComponent<Wall>();
             wallComponent.IsObstacle = isObstacle;
+            
+            if(isShining)
+                wallComponent.ShowShine();
 
             if (hasGold)
                 _goldOnTheLevel++;
@@ -94,7 +102,18 @@ namespace Assets.Assets.Source
             wallComponent.AssignGoldAndAddAction(new(gridPosition.x, gridPosition.y), hasGold, CreateGoldOnWallDestroyed);
 
             _wallLayer[gridPosition.x, gridPosition.y] = wall;
+            return wallComponent;
         }
+
+        public void ShowShine()
+        {
+            foreach (var wall in _firstWalls)
+            {
+                if (wall != null)
+                    wall.ShowShine();
+            }
+        }
+            
         private void GenerateFirstWallRow(int width, int height)
         {
             int startX = UnityEngine.Random.Range(0, width - 2);
@@ -105,13 +124,16 @@ namespace Assets.Assets.Source
             var slicePositions = _wallLayer.GetSliceIndices(startX, startY, isHorizontalSlice);
 
             int goldCount = 0;
+            
+            _firstWalls.Clear();
 
             foreach(var position in slicePositions)
             {
                 if (goldCount >= 3)
                     break;
                 goldCount++;
-                CreateWallAtPosition(position, true, false);
+                var wall = CreateWallAtPosition(position, true, false);
+                _firstWalls.Add(wall);
             }
         }
         private void CreateWalls(int width, int height, GameObject[,] previousLayer)
@@ -236,6 +258,7 @@ namespace Assets.Assets.Source
                 Width++;
                 Height++;
                 var popupPosition = GridToWorldPosition((Width - 1) / 2, (Height - 1) / 2);
+                SoundManager.Instance.LevelComplete();
                 //IncreaseTimer(5, popupPosition);
             }
             if(!TutorialMode)
@@ -331,9 +354,14 @@ namespace Assets.Assets.Source
         }
         public void FinishGame()
         {
-            DestroyMap();
-            UIManager.Instance.PlayGameEndSequence();
+            StopGame();
             OnGameEnded?.Invoke(GameDataManager.Instance.AmountOfGoldInInventory);
+        }
+
+        public void StopGame()
+        {
+            TimerManager.Instance.IsTimerRunning = false;
+            GameStopped = true;
         }
         private void AdjustCamera()
         {

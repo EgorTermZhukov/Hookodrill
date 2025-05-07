@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Assets.Assets.Source
 {
@@ -25,6 +26,7 @@ namespace Assets.Assets.Source
 
         [SerializeField] private GameObject _wallDestroyParticle;
         [SerializeField] private GameObject _goldWallDestroyParticle;
+        [SerializeField] private GameObject _obstacleClearParticle;
 
         private bool _isObstacle;
 
@@ -36,18 +38,34 @@ namespace Assets.Assets.Source
                 if(value == true)
                 {
                     _isObstacle = true;
-                    _renderer.color = Color.gray;
+                    if (HasGold)
+                    {
+                        _renderer.sprite = _obstacleGoldWallSprite;
+                    }
+                    else
+                    {
+                        _renderer.sprite = _obstacleWallSprite;
+                    }
                 }
                 else
                 {
                     _isObstacle = false;
-                    _renderer.color = Color.white;
+                    if (HasGold)
+                    {
+                        _renderer.sprite = _normalGoldWallSprite;
+                    }
+                    else
+                    {
+                        _renderer.sprite = _normalWallSprite;
+                    }
                 }
             }
         }
 
         [SerializeField] private Sprite _normalWallSprite;
-        [SerializeField] private Sprite _goldWallSprite;
+        [FormerlySerializedAs("_goldWallSprite")] [SerializeField] private Sprite _normalGoldWallSprite;
+        [SerializeField] private Sprite _obstacleWallSprite;
+        [SerializeField] private Sprite _obstacleGoldWallSprite;
 
         [SerializeField] private Animator _wallAnimator;
 
@@ -58,7 +76,7 @@ namespace Assets.Assets.Source
         
         private void Awake()
         {
-            _renderer = GetComponentInChildren<SpriteRenderer>();   
+            _renderer = GetComponentInChildren<SpriteRenderer>();
         }
         private bool _hasGold;
         public bool HasGold
@@ -66,15 +84,21 @@ namespace Assets.Assets.Source
             get => _hasGold;
             set
             {
-                if(value == true)
+                if(value)
                 {
                     _hasGold = true;
-                    _renderer.sprite = _goldWallSprite;
+                    if(!IsObstacle)
+                        _renderer.sprite = _normalGoldWallSprite;
+                    else
+                        _renderer.sprite = _obstacleGoldWallSprite;
                 }
                 else
                 {
                     _hasGold = false;
-                    _renderer.sprite = _normalWallSprite;
+                    if(!IsObstacle)
+                        _renderer.sprite = _normalWallSprite;
+                    else
+                        _renderer.sprite = _obstacleWallSprite;
                 }
             }
         }
@@ -95,6 +119,12 @@ namespace Assets.Assets.Source
             }
             SoundManager.Instance.WallHit();
         }
+
+        public void ShowShine()
+        {
+            _wallAnimator.SetBool("IsShining", true);
+            Debug.Log("Shine is showing at pos: " + _gridPosition);
+        }
         private void OnDestroy()
         {
         }
@@ -105,9 +135,9 @@ namespace Assets.Assets.Source
 
         public void CarveOutObstacle()
         {
-            Instantiate(_wallDestroyParticle, GridManager.Instance.GridToWorldPosition(_gridPosition.x, _gridPosition.y), Quaternion.identity);
+            Instantiate(_obstacleClearParticle, GridManager.Instance.GridToWorldPosition(_gridPosition.x, _gridPosition.y), Quaternion.identity);
             IsObstacle = false;
-            SoundManager.Instance.WallHit();
+            SoundManager.Instance.ObstacleHit();
         }
 
         private IEnumerator PlayWallDestroyingSequence()

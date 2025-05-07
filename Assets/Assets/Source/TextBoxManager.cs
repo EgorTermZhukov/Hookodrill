@@ -1,6 +1,7 @@
 ﻿using System;
 using TMPro;
 using UnityEngine;
+using DG.Tweening;
 
 namespace Assets.Assets.Source
 {
@@ -29,10 +30,12 @@ namespace Assets.Assets.Source
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.Space))
+            {
                 _dialogueComplete = true;
+            }
         }
 
-        public void WriteText(string text, GoldGuyFace face = GoldGuyFace.Default, bool showC = true)
+        public void WriteText(string text, GoldGuyFace face = GoldGuyFace.Default, bool showC = true, bool guyShake = true, bool textShake = false)
         {
             if(showC)
                 _pressCText.SetActive(true);
@@ -42,7 +45,10 @@ namespace Assets.Assets.Source
             _textMesh.text = text;
             _dialogueComplete = false;
             _goldStatueGuy.SetFace(face);
-            _goldStatueGuy.Shake();
+            if(guyShake)
+                _goldStatueGuy.Shake();
+            if(textShake)
+                _textMesh.rectTransform.DOShakeAnchorPos(0.5f, 3f);
         }
         public bool IsDialogueComplete()
         {

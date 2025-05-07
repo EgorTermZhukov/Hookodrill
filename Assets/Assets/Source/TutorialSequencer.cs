@@ -35,25 +35,26 @@ namespace Assets.Assets.Source
             
             textboxViniette.SetActive(true);
             
-            TextBoxManager.Instance.WriteText("So, you're finally awake");
+            TextBoxManager.Instance.WriteText("So, you're finally awake", guyShake:false);
+            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+
+            TextBoxManager.Instance.WriteText("Welcome to your new gold-hunting grounds - try not to die down here.");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("You fell through a hole in the ground, you are in my cave now");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             skipText.SetActive(false);
-            TextBoxManager.Instance.WriteText("Stand up and move!");
+            TextBoxManager.Instance.WriteText("Quit gawking and MOVE!", textShake:true);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Cmon, it's like you don't know how to do it, pathetic");
+            TextBoxManager.Instance.WriteText("What's wrong? Never operated legs before?");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            
-            TextBoxManager.Instance.WriteText("Let me tell you");
+
+            TextBoxManager.Instance.WriteText("Fine, basic walking lesson:");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
 
             TextBoxManager.Instance.WriteText("Hold [Z] to move, press [ARROW KEYS] to change direction");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Collect all the gold for me", showC:false);
+            TextBoxManager.Instance.WriteText("Now, Collect that gold for me", showC:false);
             
             textboxViniette.SetActive(false);
             moveInputs.SetActive(true);
@@ -63,7 +64,7 @@ namespace Assets.Assets.Source
             TextBoxManager.Instance.WriteText("Alright a little more", showC:false);
             
             yield return new WaitUntil(() => GridManager.Instance.LevelCount > 2);
-            TextBoxManager.Instance.WriteText("More!", GoldGuyFace.TongueOut, false);
+            TextBoxManager.Instance.WriteText("More!", GoldGuyFace.TongueOut, false, textShake:true);
             
             yield return new WaitUntil(() => GridManager.Instance.LevelCount > 3);
             
@@ -75,11 +76,10 @@ namespace Assets.Assets.Source
             TextBoxManager.Instance.WriteText("Doing good, i see");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Let me show you the coolest thing ever");
+            TextBoxManager.Instance.WriteText("Time for the main event - try not to wet yourself.");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Throw your hook with an [X] key");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            TextBoxManager.Instance.WriteText("Press [X] to throw your hook o' drill", showC:false, textShake:true);
             
             hookInputs.SetActive(true);
             
@@ -96,16 +96,10 @@ namespace Assets.Assets.Source
             
             GridManager.Instance.GameStopped = true;
             
-            TextBoxManager.Instance.WriteText("You're seeing how it goes through all the blocks?");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            
-            TextBoxManager.Instance.WriteText("There is a type of block your hook can't break through");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            
-            TextBoxManager.Instance.WriteText("Those are slightly darker");
+            TextBoxManager.Instance.WriteText("See those dark blocks? Impenetrable - for now.");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
 
-            TextBoxManager.Instance.WriteText("You can turn them back to normal by moving into them");
+            TextBoxManager.Instance.WriteText("Bump into them to reset their state.");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
             GridManager.Instance.GameStopped = false;
@@ -115,26 +109,22 @@ namespace Assets.Assets.Source
             GridManager.Instance.GameStopped = true;
             timerViniette.SetActive(true);
             
-            TextBoxManager.Instance.WriteText("Now, this is your timer");
+            TextBoxManager.Instance.WriteText("This timer is your lifeforce");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             arrow.SetActive(false);
-            
-            TextBoxManager.Instance.WriteText("If it runs out, you die");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
             TextBoxManager.Instance.WriteText("I really like the number 3", GoldGuyFace.TongueOut);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Collect 3 gold in one hook throw and i will give you 3 seconds");
+            GridManager.Instance.ShowShine();
+            TextBoxManager.Instance.WriteText("Chain 3 gold in one throw and i will give you 3 seconds!");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("They don't have to be touching");
+            TextBoxManager.Instance.WriteText("There can be gaps between them", showC:false);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("This is your ONLY way to survive", GoldGuyFace.TongueOut);
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            TextBoxManager.Instance.WriteText("This is your ONLY way to survive", GoldGuyFace.TongueOut, textShake:true, showC: false);
             
-            TextBoxManager.Instance.WriteText("Go try it out!", showC:false);
 
             TimerManager.Instance.StartCountdown(30);
             
@@ -148,28 +138,25 @@ namespace Assets.Assets.Source
             
             textboxViniette.SetActive(true);
             
-            TextBoxManager.Instance.WriteText("Too good to be true, right? Right!");
+            TextBoxManager.Instance.WriteText("This is too good to be true");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("The timer can only get up to 35 seconds", GoldGuyFace.TongueOut);
+            TextBoxManager.Instance.WriteText("The timer cannot reach above 35 seconds", GoldGuyFace.TongueOut);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("If it's higher than 30 seconds you get 2x from collected gold");
+            TextBoxManager.Instance.WriteText("You get score boost if you hold it above 30");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("You also have 10 seconds at the start of each level");
+            TextBoxManager.Instance.WriteText("...");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("This is to let you think for a while");
+            TextBoxManager.Instance.WriteText("I know this might be too difficult");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("Because i really want those 3s", GoldGuyFace.TongueOut);
+            TextBoxManager.Instance.WriteText("That's why timer is frozen for 10 seconds at start of each level");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("You can change direction");
-            yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
-            
-            TextBoxManager.Instance.WriteText("Just make sure you dont move and you're safe for a while");
+            TextBoxManager.Instance.WriteText("But if you move the time will run again");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
             TextBoxManager.Instance.WriteText("Try it out, and then get me some gold again!", showC:false);
@@ -187,14 +174,15 @@ namespace Assets.Assets.Source
             TextBoxManager.Instance.WriteText("Right right, one last thing");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText("The map grows every 5 levels");
+            TextBoxManager.Instance.WriteText("The cave grows every 5 levels");
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
-            TextBoxManager.Instance.WriteText($"If you get {GameDataManager.WinCondition}$ i will let you free");
+            TextBoxManager.Instance.WriteText($"If you get {GameDataManager.WinCondition}$ you may get on with your life", textShake:true);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
             
             TextBoxManager.Instance.WriteText("Good luck", GoldGuyFace.TongueOut);
             yield return new WaitUntil(TextBoxManager.Instance.IsDialogueComplete);
+            
             DOTween.KillAll();
             GameDataManager.Instance.TutorialComplete();
             GameDataManager.Instance.ReloadGame();

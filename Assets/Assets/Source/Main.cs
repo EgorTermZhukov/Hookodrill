@@ -1,3 +1,4 @@
+using System.Collections;
 using Assets.Assets.Source;
 using Assets.Source;
 using UnityEngine;
@@ -59,17 +60,24 @@ public class Main : MonoBehaviour
             }
         }
     }
-
     private void GoToEndgameScreen(int finalGold)
     {
-        GameDataManager.Instance.FinishGame();
-        DOTween.KillAll();
-        Camera.main.transform.position = new Vector3(_endGamePosition.position.x, _endGamePosition.position.y, Camera.main.transform.position.z);
-        UIManager.Instance.SetEndgameText(finalGold);
+        StartCoroutine(GameEndSequence());
     }
-
+    private IEnumerator GameEndSequence()
+    {
+        GridManager.Instance.StopGame();
+        GameDataManager.Instance.FinishGame();
+        UIManager.Instance.DisableHUD();
+        UIManager.Instance.ApplyDissolve();
+        yield return new WaitForSeconds(1f);
+        UIManager.Instance.PlayGameEndSequence();
+        yield break;
+    }
     private void GoToWinScreen()
     {
+        GridManager.Instance.StopGame();
+        UIManager.Instance.DisableHUD();
         GameDataManager.Instance.GameComplete();
         GameDataManager.Instance.CurrentBest = GameDataManager.Instance.AmountOfGoldInInventory;
         DOTween.KillAll();
