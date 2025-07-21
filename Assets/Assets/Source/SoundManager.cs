@@ -18,19 +18,26 @@ namespace Assets.Assets.Source
         [SerializeField] AudioSource _move;
         [SerializeField] AudioSource _goldCollect;
         [SerializeField] AudioSource _timerIncreased;
-        [SerializeField] AudioSource _characterTalk;
         [SerializeField] AudioSource _obstacleHit;
+
+        [SerializeField] AudioSource _characterTalk;
+        private int _characterCounter = 0;
+
         private void Awake()
         {
-            if(Instance == null)
+            if (Instance == null)
+            {
                 Instance = this;
+            }
             else
             {
                 Destroy(this.gameObject);
                 return;
             }
+
             DontDestroyOnLoad(this.gameObject);
         }
+
         private void PlayPitchedSequenced(AudioSource template, float rangeMin = 1f, float rangeMax = 1.1f)
         {
             // Create a new AudioSource and copy settings from the template
@@ -45,11 +52,13 @@ namespace Assets.Assets.Source
             newSource.Play();
             Destroy(newSource, newSource.clip.length); // Destroy after the clip finishes
         }
+
         private void PlayPitched(AudioSource sound, float rangeMin = 1f, float rangeMax = 1.1f)
         {
             sound.pitch = UnityEngine.Random.Range(rangeMin, rangeMax);
             sound.Play();
         }
+
         public void LevelComplete()
         {
             PlayPitched(_levelComplete);
@@ -59,22 +68,27 @@ namespace Assets.Assets.Source
         {
             PlayPitched(_hookThrow, 0.7f, 0.8f);
         }
+
         public void WallHit()
         {
             PlayPitched(_wallHit, 0.8f, 0.9f);
         }
+
         public void ObstacleHit()
         {
             PlayPitched(_obstacleHit, 0.8f, 0.9f);
         }
+
         public void Move()
         {
             PlayPitched(_move);
         }
-        public void GoldCollect() 
+
+        public void GoldCollect()
         {
             PlayPitched(_goldCollect);
         }
+
         public void TimerIncrease()
         {
             PlayPitched(_timerIncreased, 0.8f, 0.9f);
@@ -82,7 +96,7 @@ namespace Assets.Assets.Source
 
         public void CharacterTalk()
         {
-            PlayPitched(_characterTalk, 0.5f, 0.6f);
+            PlayPitched(_characterTalk, 0.4f, 0.5f);
         }
     }
 }
