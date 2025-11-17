@@ -3,7 +3,7 @@
 
 
 ## Project features: 
-- Unity analytics integration Uploaded web version on itch.io and used unity analytics to collect data about playtime, game-specific stuff such as score, combos etc.)
+- Unity analytics integration - I've Uploaded WebGL version on itch.io and used unity analytics to collect data about playtime, game-specific stuff such as score, combos etc.)
 - Uses Unity Shader graph for a pretty hypno-background
 - Relies a lot on coroutines
 - Uses DOTween as tweening engine for good-looking animations
