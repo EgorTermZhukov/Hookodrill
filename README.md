@@ -2,7 +2,7 @@
 ![ezgif com-crop](https://github.com/user-attachments/assets/506fbce0-7c35-439f-91a3-501c166ee7fd)
 
 
-## Unity project demonstrating my skills with C# and Unity: 
+## Project features: 
 - Unity analytics integration Uploaded web version on itch.io and used unity analytics to collect data about playtime, game-specific stuff such as score, combos etc.)
 - Uses Unity Shader graph for a pretty hypno-background
 - Relies a lot on coroutines
